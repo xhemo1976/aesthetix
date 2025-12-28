@@ -1,14 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { logout } from '@/lib/actions/auth'
-import { Calendar, Users, TrendingUp, Settings, LogOut } from 'lucide-react'
+import { Calendar, Users, TrendingUp, Settings, Sparkles } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
 
-  // Check if user is authenticated
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -17,7 +16,6 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // Get user profile with tenant info
   const { data: profile } = await supabase
     .from('users')
     .select('*, tenants(*)')
@@ -25,39 +23,16 @@ export default async function DashboardPage() {
     .single()
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Aesthetix
-            </h1>
-            {profile?.tenants && (
-              <p className="text-sm text-muted-foreground">{profile.tenants.name}</p>
-            )}
-          </div>
-
-          <form action={logout}>
-            <Button variant="outline" size="sm">
-              <LogOut className="w-4 h-4 mr-2" />
-              Abmelden
-            </Button>
-          </form>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">
-            Willkommen, {profile?.full_name}! 👋
-          </h2>
-          <p className="text-muted-foreground">
-            Hier ist dein Dashboard-Überblick
-          </p>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      {/* Welcome Section */}
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold mb-2">
+          Willkommen, {profile?.full_name}! 👋
+        </h2>
+        <p className="text-muted-foreground">
+          Hier ist dein Dashboard-Überblick
+        </p>
+      </div>
 
         {/* Trial Banner */}
         {profile?.tenants?.subscription_status === 'trial' && (
@@ -135,7 +110,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 border rounded-lg">
+              <Link href="/dashboard/services" className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent transition-colors">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                   1
                 </div>
@@ -146,7 +121,7 @@ export default async function DashboardPage() {
                   </p>
                 </div>
                 <Button size="sm">Starten</Button>
-              </div>
+              </Link>
 
               <div className="flex items-center gap-3 p-3 border rounded-lg opacity-50">
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold">
@@ -180,7 +155,6 @@ export default async function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </main>
     </div>
   )
 }
