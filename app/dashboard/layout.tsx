@@ -84,10 +84,9 @@ export default async function DashboardLayout({
 
             <div className="pt-4 mt-4 border-t">
               <Link href="/dashboard/settings">
-                <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors opacity-50 cursor-not-allowed">
+                <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                   <Settings className="w-5 h-5" />
                   <span>Einstellungen</span>
-                  <span className="ml-auto text-xs bg-muted px-2 py-1 rounded">Bald</span>
                 </div>
               </Link>
             </div>

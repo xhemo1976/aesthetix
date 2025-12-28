@@ -4,6 +4,16 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Generate random confirmation token
+function generateConfirmationToken(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let result = ''
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
 export async function getAppointments() {
   const supabase = await createClient()
 
@@ -14,7 +24,8 @@ export async function getAppointments() {
       customers (
         id,
         first_name,
-        last_name
+        last_name,
+        phone
       ),
       services (
         id,
@@ -75,6 +86,9 @@ export async function createAppointment(formData: FormData) {
   const start_time = new Date(`${appointment_date}T${appointment_time}`)
   const end_time = new Date(start_time.getTime() + service.duration_minutes * 60000)
 
+  // Generate confirmation token
+  const confirmation_token = generateConfirmationToken()
+
   const { error } = await supabase
     .from('appointments')
     .insert({
@@ -86,6 +100,7 @@ export async function createAppointment(formData: FormData) {
       price: service.price,
       status: 'scheduled',
       customer_notes: customer_notes || null,
+      confirmation_token,
     })
 
   if (error) {

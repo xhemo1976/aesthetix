@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppointments } from '@/lib/actions/appointments'
 import { getCustomers } from '@/lib/actions/customers'
 import { getServices } from '@/lib/actions/services'
+import { getTenantSettings } from '@/lib/actions/settings'
 import { AppointmentsList } from './appointments-list'
 
 export default async function AppointmentsPage() {
@@ -19,11 +20,13 @@ export default async function AppointmentsPage() {
   const [
     { appointments },
     { customers },
-    { services }
+    { services },
+    { settings }
   ] = await Promise.all([
     getAppointments(),
     getCustomers(),
-    getServices()
+    getServices(),
+    getTenantSettings()
   ])
 
   return (
@@ -39,6 +42,8 @@ export default async function AppointmentsPage() {
         initialAppointments={appointments || []}
         customers={customers || []}
         services={services || []}
+        clinicWhatsApp={settings?.whatsapp_number || null}
+        clinicName={settings?.name || 'Ihre Klinik'}
       />
     </div>
   )

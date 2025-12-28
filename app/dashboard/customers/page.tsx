@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCustomers } from '@/lib/actions/customers'
+import { getTenantSettings } from '@/lib/actions/settings'
 import { CustomersList } from './customers-list'
 
 export default async function CustomersPage() {
@@ -14,7 +15,10 @@ export default async function CustomersPage() {
     redirect('/login')
   }
 
-  const { customers } = await getCustomers()
+  const [{ customers }, { settings }] = await Promise.all([
+    getCustomers(),
+    getTenantSettings()
+  ])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -25,7 +29,11 @@ export default async function CustomersPage() {
         </p>
       </div>
 
-      <CustomersList initialCustomers={customers || []} />
+      <CustomersList
+        initialCustomers={customers || []}
+        clinicWhatsApp={settings?.whatsapp_number || null}
+        clinicName={settings?.name || 'Ihre Klinik'}
+      />
     </div>
   )
 }

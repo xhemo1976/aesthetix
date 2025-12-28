@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, Edit, Trash2, Mail, Phone, Calendar } from 'lucide-react'
+import { Plus, Edit, Trash2, Mail, Phone, Calendar, MessageCircle } from 'lucide-react'
 import { CustomerDialog } from './customer-dialog'
 import { deleteCustomer } from '@/lib/actions/customers'
+import { getCustomerContactLink } from '@/lib/utils/whatsapp'
 
 type Customer = {
   id: string
@@ -17,7 +18,13 @@ type Customer = {
   notes: string | null
 }
 
-export function CustomersList({ initialCustomers }: { initialCustomers: Customer[] }) {
+type CustomersListProps = {
+  initialCustomers: Customer[]
+  clinicWhatsApp: string | null
+  clinicName: string
+}
+
+export function CustomersList({ initialCustomers, clinicWhatsApp, clinicName }: CustomersListProps) {
   const [customers, setCustomers] = useState(initialCustomers)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
@@ -137,6 +144,26 @@ export function CustomersList({ initialCustomers }: { initialCustomers: Customer
                       </td>
                       <td className="p-4">
                         <div className="flex gap-2 justify-end">
+                          {clinicWhatsApp && customer.phone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              asChild
+                              title="Per WhatsApp kontaktieren"
+                            >
+                              <a
+                                href={getCustomerContactLink(
+                                  customer.phone,
+                                  `${customer.first_name} ${customer.last_name}`,
+                                  clinicName
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <MessageCircle className="w-4 h-4 text-green-600" />
+                              </a>
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

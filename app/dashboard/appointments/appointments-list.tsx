@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, Edit, Trash2, Calendar, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { Plus, Edit, Trash2, Calendar, Clock, CheckCircle2, XCircle, AlertCircle, MessageCircle, Bell } from 'lucide-react'
 import { AppointmentDialog } from './appointment-dialog'
 import { deleteAppointment, updateAppointmentStatus } from '@/lib/actions/appointments'
+import { getAppointmentReminderLink, getAppointmentConfirmationLink } from '@/lib/utils/whatsapp'
 
 type Customer = {
   id: string
@@ -27,7 +28,10 @@ type Appointment = {
   end_time: string    // TIMESTAMPTZ
   status: string
   customer_notes: string | null
-  customers: Customer
+  confirmation_token: string | null
+  customer_response: string | null
+  customer_confirmed_at: string | null
+  customers: Customer & { phone: string | null }
   services: Service
 }
 
@@ -35,6 +39,8 @@ type AppointmentsListProps = {
   initialAppointments: Appointment[]
   customers: Customer[]
   services: Service[]
+  clinicWhatsApp: string | null
+  clinicName: string
 }
 
 const statusConfig = {
@@ -45,7 +51,7 @@ const statusConfig = {
   no_show: { label: 'Nicht erschienen', color: 'bg-orange-100 text-orange-800', icon: AlertCircle },
 }
 
-export function AppointmentsList({ initialAppointments, customers, services }: AppointmentsListProps) {
+export function AppointmentsList({ initialAppointments, customers, services, clinicWhatsApp, clinicName }: AppointmentsListProps) {
   const [appointments, setAppointments] = useState(initialAppointments)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
@@ -178,15 +184,83 @@ export function AppointmentsList({ initialAppointments, customers, services }: A
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusStyle?.color}`}>
                                   <StatusIcon className="w-3 h-3" />
                                   {statusStyle?.label}
                                 </span>
+                                {appointment.customer_response === 'confirmed' && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✓ Vom Kunden bestätigt
+                                  </span>
+                                )}
+                                {appointment.customer_response === 'declined' && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    ✗ Vom Kunden abgesagt
+                                  </span>
+                                )}
                               </div>
                             </div>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              {/* WhatsApp Buttons */}
+                              {clinicWhatsApp && appointment.customers && (
+                                <>
+                                  {appointment.status === 'scheduled' && appointment.customers.phone && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      asChild
+                                      title="Termin-Bestätigung per WhatsApp senden"
+                                      className="text-green-600 border-green-300 hover:bg-green-50"
+                                    >
+                                      <a
+                                        href={getAppointmentConfirmationLink(
+                                          appointment.customers.phone,
+                                          `${appointment.customers.first_name} ${appointment.customers.last_name}`,
+                                          formatDate(getDateKey(appointment.start_time)),
+                                          formatTime(appointment.start_time),
+                                          appointment.services.name,
+                                          clinicName,
+                                          appointment.confirmation_token
+                                            ? `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/confirm/${appointment.confirmation_token}`
+                                            : undefined
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <MessageCircle className="w-4 h-4 mr-1" />
+                                        Bestätigen
+                                      </a>
+                                    </Button>
+                                  )}
+                                  {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      asChild
+                                      title="Erinnerung per WhatsApp senden"
+                                    >
+                                      <a
+                                        href={getAppointmentReminderLink(
+                                          clinicWhatsApp,
+                                          `${appointment.customers.first_name} ${appointment.customers.last_name}`,
+                                          formatDate(getDateKey(appointment.start_time)),
+                                          formatTime(appointment.start_time),
+                                          appointment.services.name,
+                                          clinicName
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <Bell className="w-4 h-4 text-green-600" />
+                                      </a>
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Status Change Buttons */}
                               {appointment.status === 'scheduled' && (
                                 <Button
                                   variant="outline"
@@ -205,6 +279,8 @@ export function AppointmentsList({ initialAppointments, customers, services }: A
                                   Abschließen
                                 </Button>
                               )}
+
+                              {/* Edit & Delete */}
                               <Button
                                 variant="ghost"
                                 size="sm"
