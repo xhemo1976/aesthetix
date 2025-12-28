@@ -22,6 +22,40 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  // Fetch statistics
+  const today = new Date()
+  const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString()
+  const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString()
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999).toISOString()
+
+  // Get customer count
+  const { count: customersCount } = await supabase
+    .from('customers')
+    .select('*', { count: 'exact', head: true })
+
+  // Get services count
+  const { count: servicesCount } = await supabase
+    .from('services')
+    .select('*', { count: 'exact', head: true })
+
+  // Get today's appointments
+  const { count: todayAppointmentsCount } = await supabase
+    .from('appointments')
+    .select('*', { count: 'exact', head: true })
+    .gte('start_time', startOfDay)
+    .lte('start_time', endOfDay)
+
+  // Calculate monthly revenue from completed appointments
+  const { data: monthlyAppointments } = await supabase
+    .from('appointments')
+    .select('price')
+    .eq('status', 'completed')
+    .gte('start_time', startOfMonth)
+    .lte('start_time', endOfMonth)
+
+  const monthlyRevenue = monthlyAppointments?.reduce((sum, apt) => sum + (apt.price || 0), 0) || 0
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Welcome Section */}
@@ -60,8 +94,10 @@ export default async function DashboardPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Noch keine Termine</p>
+              <div className="text-2xl font-bold">{todayAppointmentsCount || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {todayAppointmentsCount === 0 ? 'Noch keine Termine' : 'Termine heute'}
+              </p>
             </CardContent>
           </Card>
 
@@ -71,8 +107,10 @@ export default async function DashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Lege den ersten Kunden an</p>
+              <div className="text-2xl font-bold">{customersCount || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {customersCount === 0 ? 'Lege den ersten Kunden an' : customersCount === 1 ? 'Kunde' : 'Kunden'}
+              </p>
             </CardContent>
           </Card>
 
@@ -82,20 +120,23 @@ export default async function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">€0</div>
-              <p className="text-xs text-muted-foreground">Diesen Monat</p>
+              <div className="text-2xl font-bold">€{monthlyRevenue.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">
+                Diesen Monat
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Einstellungen</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Services</CardTitle>
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <Button variant="outline" size="sm" className="w-full">
-                Konfigurieren
-              </Button>
+              <div className="text-2xl font-bold">{servicesCount || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {servicesCount === 0 ? 'Lege Services an' : servicesCount === 1 ? 'Service' : 'Services'}
+              </p>
             </CardContent>
           </Card>
         </div>
