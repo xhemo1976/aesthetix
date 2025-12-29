@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { logout } from '@/lib/actions/auth'
-import { Calendar, Users, Sparkles, Settings, LogOut, LayoutDashboard } from 'lucide-react'
+import { Calendar, Users, Sparkles, Settings, LogOut, LayoutDashboard, UserCircle, Bell, BarChart3, MapPin, Clock, Package } from 'lucide-react'
 
 export default async function DashboardLayout({
   children,
@@ -68,6 +68,13 @@ export default async function DashboardLayout({
               </div>
             </Link>
 
+            <Link href="/dashboard/packages">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+                <Package className="w-5 h-5" />
+                <span>Pakete</span>
+              </div>
+            </Link>
+
             <Link href="/dashboard/customers">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                 <Users className="w-5 h-5" />
@@ -75,10 +82,52 @@ export default async function DashboardLayout({
               </div>
             </Link>
 
+            <Link href="/dashboard/employees">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+                <UserCircle className="w-5 h-5" />
+                <span>Mitarbeiter</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/locations">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+                <MapPin className="w-5 h-5" />
+                <span>Standorte</span>
+              </div>
+            </Link>
+
             <Link href="/dashboard/appointments">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                 <Calendar className="w-5 h-5" />
                 <span>Termine</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/calendar">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+                <Calendar className="w-5 h-5" />
+                <span>Kalender</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/reminders">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+                <Bell className="w-5 h-5" />
+                <span>Erinnerungen</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/waitlist">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+                <Clock className="w-5 h-5" />
+                <span>Warteliste</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/analytics">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+                <BarChart3 className="w-5 h-5" />
+                <span>Analytics</span>
               </div>
             </Link>
 

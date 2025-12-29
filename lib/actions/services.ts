@@ -35,7 +35,7 @@ export async function createService(formData: FormData) {
     .from('users')
     .select('tenant_id')
     .eq('id', user.id)
-    .single()
+    .single() as { data: { tenant_id: string } | null }
 
   if (!profile) {
     return { error: 'Profil nicht gefunden' }

@@ -20,10 +20,21 @@ type Service = {
   duration_minutes: number
 }
 
+type Employee = {
+  id: string
+  first_name: string
+  last_name: string
+  role: string
+  specialties: string[]
+  is_active: boolean
+  work_schedule: Record<string, { start: string; end: string }>
+}
+
 type Appointment = {
   id: string
   customer_id: string
   service_id: string
+  employee_id: string | null
   start_time: string  // TIMESTAMPTZ
   end_time: string    // TIMESTAMPTZ
   status: string
@@ -33,12 +44,14 @@ type Appointment = {
   customer_confirmed_at: string | null
   customers: Customer & { phone: string | null }
   services: Service
+  employees: Employee | null
 }
 
 type AppointmentsListProps = {
   initialAppointments: Appointment[]
   customers: Customer[]
   services: Service[]
+  employees: Employee[]
   clinicWhatsApp: string | null
   clinicName: string
 }
@@ -51,7 +64,7 @@ const statusConfig = {
   no_show: { label: 'Nicht erschienen', color: 'bg-orange-100 text-orange-800', icon: AlertCircle },
 }
 
-export function AppointmentsList({ initialAppointments, customers, services, clinicWhatsApp, clinicName }: AppointmentsListProps) {
+export function AppointmentsList({ initialAppointments, customers, services, employees, clinicWhatsApp, clinicName }: AppointmentsListProps) {
   const [appointments, setAppointments] = useState(initialAppointments)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
@@ -177,6 +190,11 @@ export function AppointmentsList({ initialAppointments, customers, services, cli
                                 <div className="text-sm text-muted-foreground">
                                   {appointment.services.name} ({appointment.services.duration_minutes} Min)
                                 </div>
+                                {appointment.employees && (
+                                  <div className="text-sm text-muted-foreground">
+                                    👤 {appointment.employees.first_name} {appointment.employees.last_name}
+                                  </div>
+                                )}
                                 {appointment.customer_notes && (
                                   <div className="text-sm text-muted-foreground mt-1">
                                     💬 {appointment.customer_notes}
@@ -314,6 +332,14 @@ export function AppointmentsList({ initialAppointments, customers, services, cli
         appointment={editingAppointment}
         customers={customers}
         services={services}
+        employees={employees}
+        existingAppointments={appointments.map(a => ({
+          id: a.id,
+          employee_id: a.employee_id,
+          start_time: a.start_time,
+          end_time: a.end_time,
+          status: a.status
+        }))}
       />
     </div>
   )

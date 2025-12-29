@@ -2,8 +2,9 @@ import { redirect } from 'next/navigation'
 import { getAppointmentByToken } from '@/lib/actions/confirmation'
 import { ConfirmationForm } from './confirmation-form'
 
-export default async function ConfirmationPage({ params }: { params: { token: string } }) {
-  const { appointment, error } = await getAppointmentByToken(params.token)
+export default async function ConfirmationPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params
+  const { appointment, error } = await getAppointmentByToken(token)
 
   if (error || !appointment) {
     return (
@@ -60,7 +61,7 @@ export default async function ConfirmationPage({ params }: { params: { token: st
           <p className="text-muted-foreground">{appointment.tenants.name}</p>
         </div>
 
-        <ConfirmationForm appointment={appointment} token={params.token} />
+        <ConfirmationForm appointment={appointment} token={token} />
       </div>
     </div>
   )

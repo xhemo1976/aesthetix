@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, Edit, Trash2, Mail, Phone, Calendar, MessageCircle } from 'lucide-react'
+import { Plus, Edit, Trash2, Mail, Phone, Calendar, MessageCircle, Eye } from 'lucide-react'
 import { CustomerDialog } from './customer-dialog'
 import { deleteCustomer } from '@/lib/actions/customers'
 import { getCustomerContactLink } from '@/lib/utils/whatsapp'
@@ -100,9 +101,12 @@ export function CustomersList({ initialCustomers, clinicWhatsApp, clinicName }: 
                   {customers.map((customer) => (
                     <tr key={customer.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                       <td className="p-4">
-                        <div className="font-medium">
+                        <Link
+                          href={`/dashboard/customers/${customer.id}`}
+                          className="font-medium hover:text-primary hover:underline"
+                        >
                           {customer.first_name} {customer.last_name}
-                        </div>
+                        </Link>
                       </td>
                       <td className="p-4">
                         <div className="space-y-1 text-sm">
@@ -144,6 +148,16 @@ export function CustomersList({ initialCustomers, clinicWhatsApp, clinicName }: 
                       </td>
                       <td className="p-4">
                         <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            title="Details anzeigen"
+                          >
+                            <Link href={`/dashboard/customers/${customer.id}`}>
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                          </Button>
                           {clinicWhatsApp && customer.phone && (
                             <Button
                               variant="ghost"

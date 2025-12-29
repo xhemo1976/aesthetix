@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users, Bot, Sparkles, TrendingUp, Shield } from "lucide-react";
+import { ChatWidget } from "@/components/chat-widget";
 
 export default function Home() {
   return (
@@ -207,6 +208,9 @@ export default function Home() {
           <p>© 2026 Aesthetix - Professionelle Praxissoftware für die Beauty-Branche</p>
         </div>
       </footer>
+
+      {/* Chat Widget */}
+      <ChatWidget />
     </div>
   );
 }

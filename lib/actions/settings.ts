@@ -19,7 +19,7 @@ export async function getTenantSettings() {
     .from('users')
     .select('tenant_id')
     .eq('id', user.id)
-    .single()
+    .single() as { data: { tenant_id: string } | null }
 
   if (!profile) {
     return { settings: null, error: 'Profil nicht gefunden' }
@@ -55,7 +55,7 @@ export async function updateTenantSettings(formData: FormData) {
     .from('users')
     .select('tenant_id')
     .eq('id', user.id)
-    .single()
+    .single() as { data: { tenant_id: string } | null }
 
   if (!profile) {
     return { error: 'Profil nicht gefunden' }

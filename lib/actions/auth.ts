@@ -58,7 +58,7 @@ export async function signup(formData: FormData) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
 
-  const { data: tenant, error: tenantError } = await adminClient
+  const { data: tenant, error: tenantError } = await (adminClient
     .from('tenants')
     .insert({
       name: clinicName,
@@ -66,9 +66,9 @@ export async function signup(formData: FormData) {
       business_type: businessType,
       subscription_status: 'trial',
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days
-    })
+    } as unknown as never)
     .select()
-    .single()
+    .single() as unknown as Promise<{ data: { id: string } | null; error: Error | null }>)
 
   if (tenantError) {
     // Rollback: delete auth user if tenant creation fails
@@ -77,15 +77,15 @@ export async function signup(formData: FormData) {
   }
 
   // 3. Create user profile - using admin client to bypass RLS
-  const { error: userError } = await adminClient
+  const { error: userError } = await (adminClient
     .from('users')
     .insert({
       id: authData.user.id,
-      tenant_id: tenant.id,
+      tenant_id: tenant?.id,
       email: email,
       full_name: fullName,
       role: 'owner',
-    })
+    } as unknown as never) as unknown as Promise<{ error: Error | null }>)
 
   if (userError) {
     return { error: 'Fehler beim Erstellen des Profils: ' + userError.message }

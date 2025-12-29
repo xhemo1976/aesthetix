@@ -159,3 +159,30 @@ export function getCustomerContactLink(
 
   return generateWhatsAppLink(whatsappNumber, message)
 }
+
+/**
+ * Generate waitlist notification message
+ */
+export function getWaitlistNotificationMessage(params: {
+  customerName: string
+  serviceName: string
+  date: string
+  time: string
+  clinicName: string
+  bookingUrl: string
+}): string {
+  return `Hallo ${params.customerName}! 👋
+
+Gute Nachrichten von ${params.clinicName}! 🎉
+
+Ein Termin ist frei geworden für Ihre gewünschte Behandlung:
+
+💆 ${params.serviceName}
+📅 ${params.date}
+🕐 ${params.time}
+
+Buchen Sie jetzt, bevor der Termin vergeben ist:
+🔗 ${params.bookingUrl}
+
+Bei Fragen melden Sie sich gerne!`
+}

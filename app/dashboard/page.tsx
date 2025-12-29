@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Users, TrendingUp, Settings, Sparkles } from 'lucide-react'
+import { Calendar, Users, TrendingUp, Settings, Sparkles, Check } from 'lucide-react'
+import { BookingLinkCard } from './booking-link-card'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -141,8 +142,16 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
+        {/* Booking Link Card */}
+        {profile?.tenants?.slug && (
+          <BookingLinkCard
+            tenantSlug={profile.tenants.slug}
+            tenantName={profile.tenants.name}
+          />
+        )}
+
         {/* Getting Started */}
-        <Card>
+        <Card className="mt-8">
           <CardHeader>
             <CardTitle>Erste Schritte 🚀</CardTitle>
             <CardDescription>
@@ -152,46 +161,48 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               <Link href="/dashboard/services" className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent transition-colors">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                  1
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${(servicesCount || 0) > 0 ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'}`}>
+                  {(servicesCount || 0) > 0 ? <Check className="w-4 h-4" /> : '1'}
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">Services hinzufügen</p>
                   <p className="text-sm text-muted-foreground">
-                    Füge deine Behandlungen und Preise hinzu
+                    {(servicesCount || 0) > 0
+                      ? `${servicesCount} Service${servicesCount === 1 ? '' : 's'} angelegt`
+                      : 'Füge deine Behandlungen und Preise hinzu'
+                    }
                   </p>
                 </div>
-                <Button size="sm">Starten</Button>
+                <Button size="sm" variant={(servicesCount || 0) > 0 ? 'outline' : 'default'}>
+                  {(servicesCount || 0) > 0 ? 'Bearbeiten' : 'Starten'}
+                </Button>
               </Link>
 
-              <div className="flex items-center gap-3 p-3 border rounded-lg opacity-50">
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold">
+              <Link href="/dashboard/employees" className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent transition-colors">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                   2
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">Mitarbeiter einladen</p>
+                  <p className="font-medium">Mitarbeiter hinzufügen</p>
                   <p className="text-sm text-muted-foreground">
-                    Lade dein Team ein
+                    Füge dein Team und deren Arbeitszeiten hinzu
                   </p>
                 </div>
-                <Button size="sm" variant="outline" disabled>
-                  Bald verfügbar
+                <Button size="sm" variant="outline">
+                  Hinzufügen
                 </Button>
-              </div>
+              </Link>
 
-              <div className="flex items-center gap-3 p-3 border rounded-lg opacity-50">
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold">
-                  3
+              <div className="flex items-center gap-3 p-3 border rounded-lg border-green-200 bg-green-50">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                  <Check className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">Online-Buchung aktivieren</p>
-                  <p className="text-sm text-muted-foreground">
-                    Kunden können direkt buchen
+                  <p className="font-medium text-green-800">Online-Buchung aktiv</p>
+                  <p className="text-sm text-green-600">
+                    Kunden können über deinen Buchungslink Termine buchen
                   </p>
                 </div>
-                <Button size="sm" variant="outline" disabled>
-                  Bald verfügbar
-                </Button>
               </div>
             </div>
           </CardContent>
