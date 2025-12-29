@@ -68,7 +68,8 @@ export async function signup(formData: FormData) {
     // Make slug unique by adding random suffix if needed
     const uniqueSlug = `${slug}-${Date.now().toString(36)}`
 
-    const { data: tenant, error: tenantError } = await adminClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: tenant, error: tenantError } = await (adminClient as any)
       .from('tenants')
       .insert({
         name: clinicName,
@@ -93,7 +94,8 @@ export async function signup(formData: FormData) {
     }
 
     // 3. Create user profile - using admin client to bypass RLS
-    const { error: userError } = await adminClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: userError } = await (adminClient as any)
       .from('users')
       .insert({
         id: authData.user.id,
