@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialization - only create OpenAI client when needed
+let openaiClient: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY) {
+    return null
+  }
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return openaiClient
+}
 
 interface TenantInfo {
   id: string
@@ -126,6 +137,14 @@ Wichtige Regeln:
 ${tenantContext}
 
 Wenn keine spezifischen Klinik-Informationen verfügbar sind, erkläre dass du ein Assistent für Aesthetix bist - eine Buchungsplattform für Schönheitskliniken.`
+
+    const openai = getOpenAIClient()
+    if (!openai) {
+      return NextResponse.json(
+        { error: 'Chat nicht verfügbar - OPENAI_API_KEY nicht konfiguriert' },
+        { status: 503 }
+      )
+    }
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
