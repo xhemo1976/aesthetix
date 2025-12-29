@@ -1,10 +1,10 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // WICHTIG: Standalone-Modus für Hostinger aktivieren
+  // Hier war oft der Fehler: Das Komma am Ende ist wichtig!
   output: 'standalone',
 
-  // Deine bestehende Image-Konfiguration bleibt erhalten
+  // Deine Image Einstellungen
   images: {
     remotePatterns: [
       {
@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Sicherheits-Header
+  // Security Header
   poweredByHeader: false,
 }
 
