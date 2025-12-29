@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Standalone output for self-contained deployment
-  output: 'standalone',
-
   // Image optimization
   images: {
     remotePatterns: [
