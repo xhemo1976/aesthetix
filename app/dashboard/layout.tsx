@@ -33,7 +33,7 @@ export default async function DashboardLayout({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Aesthetix
+              Esylana
             </h1>
           </Link>
           {profile?.tenants && (

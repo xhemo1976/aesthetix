@@ -1,4 +1,4 @@
-# Aesthetix 🌸
+# Esylana 🌸
 
 **Multi-Tenant SaaS für Schönheitskliniken und Ästhetik-Praxen**
 
@@ -60,4 +60,4 @@ Kopiere `.env.local.example` zu `.env.local` und fülle die Werte aus.
 
 ## License
 
-Proprietary - © 2026 Aesthetix
+Proprietary - © 2026 Esylana

@@ -15,7 +15,7 @@ function getResendClient(): Resend | null {
 }
 
 // Default sender - update this to your verified domain in Resend
-const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'Aesthetix <onboarding@resend.dev>'
+const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'Esylana <onboarding@resend.dev>'
 
 export interface BookingConfirmationEmailParams {
   to: string
@@ -176,7 +176,7 @@ export async function sendBookingConfirmationEmail(params: BookingConfirmationEm
           <tr>
             <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                Diese Email wurde automatisch von Aesthetix gesendet.
+                Diese Email wurde automatisch von Esylana gesendet.
               </p>
               <p style="margin: 8px 0 0; color: #9ca3af; font-size: 12px;">
                 Bei Fragen kontaktiere uns direkt.
@@ -213,7 +213,7 @@ ${clinicAddress || ''}
 ${clinicPhone ? `Tel: ${clinicPhone}` : ''}
 
 ---
-Diese Email wurde automatisch von Aesthetix gesendet.
+Diese Email wurde automatisch von Esylana gesendet.
   `.trim()
 
   try {

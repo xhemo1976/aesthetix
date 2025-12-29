@@ -33,7 +33,7 @@ export default function SignupPage() {
           <Link href="/" className="inline-flex items-center gap-2 mb-4">
             <Sparkles className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Aesthetix
+              Esylana
             </h1>
           </Link>
           <p className="text-muted-foreground">

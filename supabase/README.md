@@ -1,4 +1,4 @@
-# Supabase Setup für Aesthetix
+# Supabase Setup für Esylana
 
 ## 🚀 Schnellstart
 
@@ -13,7 +13,7 @@
 1. Klicke auf "New Project"
 2. Wähle eine Organisation (oder erstelle eine neue)
 3. Projekt-Details:
-   - **Name:** Aesthetix
+   - **Name:** Esylana
    - **Database Password:** (Sichere das Passwort!)
    - **Region:** Frankfurt (eu-central-1) - Deutschland
    - **Pricing Plan:** Free Tier zum Testen

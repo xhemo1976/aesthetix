@@ -53,7 +53,7 @@ export function ChatWidget({ tenantSlug, tenantName, className }: ChatWidgetProp
         role: 'assistant',
         content: tenantName
           ? `Hallo! Ich bin der virtuelle Assistent von ${tenantName}. Wie kann ich dir heute helfen? Du kannst mich nach unseren Behandlungen, Preisen oder zur Terminbuchung fragen.`
-          : 'Hallo! Ich bin der Aesthetix-Assistent. Wie kann ich dir heute helfen?'
+          : 'Hallo! Ich bin der Esylana-Assistent. Wie kann ich dir heute helfen?'
       }
       setMessages([welcomeMessage])
     }
@@ -120,7 +120,7 @@ export function ChatWidget({ tenantSlug, tenantName, className }: ChatWidgetProp
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 bg-gradient-to-r from-primary to-pink-500 text-white rounded-t-lg">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
               <Sparkles className="w-5 h-5" />
-              {tenantName ? `${tenantName} Chat` : 'Aesthetix Chat'}
+              {tenantName ? `${tenantName} Chat` : 'Esylana Chat'}
             </CardTitle>
             <Button
               variant="ghost"

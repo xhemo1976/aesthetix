@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Aesthetix - Beauty Clinic Management SaaS",
+  title: "Esylana - Beauty Clinic Management SaaS",
   description: "Professional booking and management system for beauty clinics and aesthetic practices",
 };
 

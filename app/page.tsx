@@ -16,7 +16,7 @@ export default function Home() {
           </div>
 
           <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            Aesthetix
+            Esylana
           </h1>
 
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl">
@@ -205,7 +205,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-muted py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2026 Aesthetix - Professionelle Praxissoftware für die Beauty-Branche</p>
+          <p>© 2026 Esylana - Professionelle Praxissoftware für die Beauty-Branche</p>
         </div>
       </footer>
 

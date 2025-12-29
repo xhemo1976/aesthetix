@@ -84,7 +84,7 @@ export default async function LocationBookingPage({
 
         {/* Footer */}
         <footer className="text-center mt-8 text-sm text-muted-foreground">
-          <p>Powered by Aesthetix</p>
+          <p>Powered by Esylana</p>
         </footer>
       </div>
 

@@ -136,7 +136,7 @@ Wichtige Regeln:
 
 ${tenantContext}
 
-Wenn keine spezifischen Klinik-Informationen verfügbar sind, erkläre dass du ein Assistent für Aesthetix bist - eine Buchungsplattform für Schönheitskliniken.`
+Wenn keine spezifischen Klinik-Informationen verfügbar sind, erkläre dass du ein Assistent für Esylana bist - eine Buchungsplattform für Schönheitskliniken.`
 
     const openai = getOpenAIClient()
     if (!openai) {
