@@ -1,7 +1,10 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Image optimization
+  // WICHTIG: Standalone-Modus für Hostinger aktivieren
+  output: 'standalone',
+
+  // Deine bestehende Image-Konfiguration bleibt erhalten
   images: {
     remotePatterns: [
       {
@@ -11,7 +14,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Disable x-powered-by header for security
+  // Sicherheits-Header
   poweredByHeader: false,
 }
 
