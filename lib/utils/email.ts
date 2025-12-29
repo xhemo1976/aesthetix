@@ -1,6 +1,18 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialization - only create Resend instance when needed
+let resendClient: Resend | null = null
+
+function getResendClient(): Resend | null {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY not set - email functionality disabled')
+    return null
+  }
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY)
+  }
+  return resendClient
+}
 
 // Default sender - update this to your verified domain in Resend
 const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'Aesthetix <onboarding@resend.dev>'
@@ -205,6 +217,12 @@ Diese Email wurde automatisch von Aesthetix gesendet.
   `.trim()
 
   try {
+    const resend = getResendClient()
+    if (!resend) {
+      console.log('Email skipped - RESEND_API_KEY not configured')
+      return { success: false, error: 'Email not configured' }
+    }
+
     const { data, error } = await resend.emails.send({
       from: DEFAULT_FROM,
       to,
@@ -329,6 +347,12 @@ ${clinicPhone ? `Tel: ${clinicPhone}` : ''}
   `.trim()
 
   try {
+    const resend = getResendClient()
+    if (!resend) {
+      console.log('Email skipped - RESEND_API_KEY not configured')
+      return { success: false, error: 'Email not configured' }
+    }
+
     const { data, error } = await resend.emails.send({
       from: DEFAULT_FROM,
       to,
