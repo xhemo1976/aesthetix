@@ -62,8 +62,9 @@ interface Service {
   id: string
   name: string
   description: string | null
-  duration: number
+  duration_minutes: number
   price: number
+  category: string | null
 }
 
 interface Employee {

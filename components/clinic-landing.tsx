@@ -22,8 +22,9 @@ interface Service {
   id: string
   name: string
   description: string | null
-  duration: number
+  duration_minutes: number
   price: number
+  category: string | null
 }
 
 interface Employee {
@@ -58,8 +59,19 @@ interface ClinicLandingProps {
 
 export function ClinicLanding({ tenant, services, employees, locations }: ClinicLandingProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const primaryLocation = locations[0]
   const bookingUrl = `/book/${tenant.slug}`
+
+  // Extract unique categories from services
+  const categories = Array.from(
+    new Set(services.map(s => s.category).filter((c): c is string => c !== null && c !== ''))
+  ).sort()
+
+  // Filter services based on selected category
+  const filteredServices = selectedCategory
+    ? services.filter(s => s.category === selectedCategory)
+    : services
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
@@ -226,7 +238,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
       {/* Services Section */}
       <section id="services" className="py-32 bg-gradient-to-b from-[#0a0a0a] via-[#111] to-[#0a0a0a]">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
+          <div className="text-center mb-12">
             <span className="text-amber-400 tracking-[0.3em] uppercase text-sm">Unsere Leistungen</span>
             <h2 className="text-4xl md:text-5xl font-extralight mt-4 tracking-wide">
               Exklusive Behandlungen
@@ -234,8 +246,37 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
             <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mt-8" />
           </div>
 
+          {/* Category Tabs */}
+          {categories.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-3 mb-16">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`px-6 py-3 rounded-full text-sm tracking-[0.15em] uppercase transition-all duration-300 ${
+                  selectedCategory === null
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium'
+                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                }`}
+              >
+                Alle
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-6 py-3 rounded-full text-sm tracking-[0.15em] uppercase transition-all duration-300 ${
+                    selectedCategory === category
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium'
+                      : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((service, index) => (
+            {filteredServices.map((service, index) => (
               <div
                 key={service.id}
                 className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-amber-500/50 transition-all duration-500 hover:transform hover:scale-105"
@@ -256,7 +297,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
                   <div className="flex items-center justify-between pt-6 border-t border-white/10">
                     <div className="flex items-center gap-2 text-white/50 text-sm">
                       <Clock className="w-4 h-4" />
-                      {service.duration} Min
+                      {service.duration_minutes} Min
                     </div>
                     <div className="text-amber-400 font-light text-xl">
                       {service.price > 0 ? `€${service.price}` : 'Auf Anfrage'}
