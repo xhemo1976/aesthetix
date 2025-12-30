@@ -17,8 +17,10 @@ import {
   Check,
   Loader2,
   ClockIcon,
+  Search,
+  UserCheck,
 } from 'lucide-react'
-import { getAvailableSlots, createPublicBooking, type Employee } from '@/lib/actions/public-booking'
+import { getAvailableSlots, createPublicBooking, lookupCustomer, type Employee } from '@/lib/actions/public-booking'
 import { WaitlistForm } from './waitlist-form'
 import type { Database } from '@/lib/types/database'
 
@@ -40,6 +42,15 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Category filter
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const categories = Array.from(
+    new Set(services.map(s => s.category).filter((c): c is string => c !== null && c !== ''))
+  ).sort()
+  const filteredServices = selectedCategory
+    ? services.filter(s => s.category === selectedCategory)
+    : services
+
   // Form state
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
@@ -56,6 +67,45 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
   const [notes, setNotes] = useState('')
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [smsConsent, setSmsConsent] = useState(false)
+
+  // Returning customer lookup
+  const [lookupValue, setLookupValue] = useState('')
+  const [isLookingUp, setIsLookingUp] = useState(false)
+  const [isReturningCustomer, setIsReturningCustomer] = useState(false)
+  const [showLookupForm, setShowLookupForm] = useState(true)
+
+  const handleCustomerLookup = async () => {
+    if (!lookupValue.trim()) return
+
+    setIsLookingUp(true)
+    setError(null)
+
+    const isEmail = lookupValue.includes('@')
+    const result = await lookupCustomer({
+      tenantId: tenant.id,
+      phone: isEmail ? undefined : lookupValue,
+      email: isEmail ? lookupValue : undefined,
+    })
+
+    setIsLookingUp(false)
+
+    if (result.customer) {
+      setFirstName(result.customer.first_name)
+      setLastName(result.customer.last_name)
+      setEmail(result.customer.email || '')
+      setPhone(result.customer.phone || '')
+      setIsReturningCustomer(true)
+      setShowLookupForm(false)
+    } else {
+      // Not found - switch to new customer form
+      if (isEmail) {
+        setEmail(lookupValue)
+      } else {
+        setPhone(lookupValue)
+      }
+      setShowLookupForm(false)
+    }
+  }
 
   // Calculate min date (today)
   const today = new Date().toISOString().split('T')[0]
@@ -108,6 +158,8 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
       case 'datetime':
         return selectedDate && selectedTime
       case 'customer':
+        // Can't proceed if still showing lookup form
+        if (showLookupForm) return false
         return firstName && lastName && (email || phone)
       case 'confirm':
         return true
@@ -268,13 +320,46 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
         <CardContent>
           {/* Service Selection */}
           {currentStep === 'service' && (
-            <div className="grid gap-3">
-              {services.length === 0 ? (
+            <div className="space-y-4">
+              {/* Category Tabs */}
+              {categories.length > 0 && (
+                <div className="flex flex-wrap gap-2 pb-4 border-b">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory(null)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      selectedCategory === null
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    Alle
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        selectedCategory === category
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Service List */}
+              <div className="grid gap-3">
+              {filteredServices.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   Keine Services verfügbar
                 </p>
               ) : (
-                services.map(service => (
+                filteredServices.map(service => (
                   <button
                     key={service.id}
                     type="button"
@@ -305,6 +390,7 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
                   </button>
                 ))
               )}
+              </div>
             </div>
           )}
 
@@ -440,97 +526,159 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
           {/* Customer Info */}
           {currentStep === 'customer' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">Vorname *</Label>
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={e => setFirstName(e.target.value)}
-                    placeholder="Max"
-                    required
-                  />
+              {/* Returning Customer Lookup */}
+              {showLookupForm ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4">
+                    <div className="flex items-center gap-2 text-primary">
+                      <UserCheck className="w-5 h-5" />
+                      <span className="font-medium">Schon mal hier gewesen?</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Gib deine Telefonnummer oder Email ein und wir füllen deine Daten automatisch aus.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={lookupValue}
+                        onChange={e => setLookupValue(e.target.value)}
+                        placeholder="Telefon oder Email"
+                        onKeyDown={e => e.key === 'Enter' && handleCustomerLookup()}
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleCustomerLookup}
+                        disabled={isLookingUp || !lookupValue.trim()}
+                      >
+                        {isLookingUp ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Search className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">oder</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowLookupForm(false)}
+                  >
+                    Ich bin neu hier
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Nachname *</Label>
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={e => setLastName(e.target.value)}
-                    placeholder="Mustermann"
-                    required
-                  />
-                </div>
-              </div>
+              ) : (
+                <>
+                  {/* Returning Customer Banner */}
+                  {isReturningCustomer && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700">
+                      <UserCheck className="w-5 h-5" />
+                      <span className="text-sm font-medium">Willkommen zurück! Deine Daten wurden automatisch ausgefüllt.</span>
+                    </div>
+                  )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="max@beispiel.de"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Für die Terminbestätigung per Email
-                </p>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">Vorname *</Label>
+                      <Input
+                        id="firstName"
+                        value={firstName}
+                        onChange={e => setFirstName(e.target.value)}
+                        placeholder="Max"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Nachname *</Label>
+                      <Input
+                        id="lastName"
+                        value={lastName}
+                        onChange={e => setLastName(e.target.value)}
+                        placeholder="Mustermann"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefon / WhatsApp</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="+49 123 456789"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Für die Terminbestätigung per WhatsApp
-                </p>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="max@beispiel.de"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Für die Terminbestätigung per Email
+                    </p>
+                  </div>
 
-              {!email && !phone && (
-                <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-                  Bitte gib mindestens eine Email-Adresse oder Telefonnummer an
-                </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefon / WhatsApp</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="+49 123 456789"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Für die Terminbestätigung per WhatsApp
+                    </p>
+                  </div>
+
+                  {!email && !phone && (
+                    <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                      Bitte gib mindestens eine Email-Adresse oder Telefonnummer an
+                    </p>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Anmerkungen (optional)</Label>
+                    <textarea
+                      id="notes"
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                      placeholder="Besondere Wünsche oder Hinweise..."
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    />
+                  </div>
+
+                  <div className="space-y-3 pt-4 border-t">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="smsConsent"
+                        checked={smsConsent}
+                        onCheckedChange={(checked) => setSmsConsent(checked === true)}
+                      />
+                      <Label htmlFor="smsConsent" className="text-sm">
+                        Ich möchte Terminerinnerungen per SMS/WhatsApp erhalten
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="marketingConsent"
+                        checked={marketingConsent}
+                        onCheckedChange={(checked) => setMarketingConsent(checked === true)}
+                      />
+                      <Label htmlFor="marketingConsent" className="text-sm">
+                        Ich möchte über Angebote und Neuigkeiten informiert werden
+                      </Label>
+                    </div>
+                  </div>
+                </>
               )}
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Anmerkungen (optional)</Label>
-                <textarea
-                  id="notes"
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Besondere Wünsche oder Hinweise..."
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                />
-              </div>
-
-              <div className="space-y-3 pt-4 border-t">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="smsConsent"
-                    checked={smsConsent}
-                    onCheckedChange={(checked) => setSmsConsent(checked === true)}
-                  />
-                  <Label htmlFor="smsConsent" className="text-sm">
-                    Ich möchte Terminerinnerungen per SMS/WhatsApp erhalten
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="marketingConsent"
-                    checked={marketingConsent}
-                    onCheckedChange={(checked) => setMarketingConsent(checked === true)}
-                  />
-                  <Label htmlFor="marketingConsent" className="text-sm">
-                    Ich möchte über Angebote und Neuigkeiten informiert werden
-                  </Label>
-                </div>
-              </div>
             </div>
           )}
 

@@ -516,6 +516,68 @@ export async function createPublicBooking(formData: FormData): Promise<{
 }
 
 /**
+ * Look up existing customer by phone or email (for returning customers)
+ */
+export async function lookupCustomer(params: {
+  tenantId: string
+  phone?: string
+  email?: string
+}): Promise<{
+  customer: {
+    id: string
+    first_name: string
+    last_name: string
+    email: string | null
+    phone: string | null
+  } | null
+  error: string | null
+}> {
+  const adminClient = createAdminClient()
+  const { tenantId, phone, email } = params
+
+  if (!phone && !email) {
+    return { customer: null, error: 'Bitte gib eine Telefonnummer oder Email an' }
+  }
+
+  let customer = null
+
+  // Try phone first (most common for returning customers)
+  if (phone) {
+    // Normalize phone number (remove spaces, dashes, etc.)
+    const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '')
+
+    const { data } = await adminClient
+      .from('customers')
+      .select('id, first_name, last_name, email, phone')
+      .eq('tenant_id', tenantId)
+      .or(`phone.eq.${phone},phone.eq.${normalizedPhone}`)
+      .limit(1)
+      .single()
+
+    if (data) {
+      customer = data
+    }
+  }
+
+  // If not found by phone, try email
+  if (!customer && email) {
+    const { data } = await adminClient
+      .from('customers')
+      .select('id, first_name, last_name, email, phone')
+      .eq('tenant_id', tenantId)
+      .eq('email', email.toLowerCase())
+      .limit(1)
+      .single()
+
+    if (data) {
+      customer = data
+    }
+  }
+
+  return { customer, error: null }
+}
+
+/**
  * Get appointment details by confirmation token (for success page)
  */
 export async function getPublicAppointmentByToken(token: string): Promise<{
