@@ -1,10 +1,10 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Hier war oft der Fehler: Das Komma am Ende ist wichtig!
+  // Enable standalone output for self-hosting (Hostinger)
   output: 'standalone',
 
-  // Deine Image Einstellungen
+  // Image optimization
   images: {
     remotePatterns: [
       {
