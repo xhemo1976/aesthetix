@@ -25,16 +25,25 @@ import type { Database } from '@/lib/types/database'
 type Tenant = Database['public']['Tables']['tenants']['Row']
 type Service = Database['public']['Tables']['services']['Row']
 
+type CustomerData = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string | null
+} | null
+
 interface BookingFormProps {
   tenant: Tenant
   services: Service[]
   employees: Employee[]
   locationId?: string
+  customerData?: CustomerData
 }
 
 type Step = 'service' | 'employee' | 'datetime' | 'customer' | 'confirm' | 'waitlist'
 
-export function BookingForm({ tenant, services, employees, locationId }: BookingFormProps) {
+export function BookingForm({ tenant, services, employees, locationId, customerData }: BookingFormProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState<Step>('service')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -57,14 +66,17 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
 
-  // Customer info
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  // Customer info - pre-fill from logged-in customer data
+  const [firstName, setFirstName] = useState(customerData?.firstName || '')
+  const [lastName, setLastName] = useState(customerData?.lastName || '')
+  const [email, setEmail] = useState(customerData?.email || '')
+  const [phone, setPhone] = useState(customerData?.phone || '')
   const [notes, setNotes] = useState('')
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [smsConsent, setSmsConsent] = useState(false)
+
+  // Track if customer is logged in
+  const isLoggedIn = !!customerData
 
   // Calculate min date (today)
   const today = new Date().toISOString().split('T')[0]
@@ -483,6 +495,15 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
           {/* Customer Info */}
           {currentStep === 'customer' && (
             <div className="space-y-4">
+              {isLoggedIn && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-700">
+                    <Check className="w-4 h-4 inline mr-2" />
+                    Deine Daten wurden automatisch ausgefüllt
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Vorname *</Label>
@@ -514,6 +535,7 @@ export function BookingForm({ tenant, services, employees, locationId }: Booking
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="max@beispiel.de"
+                  disabled={isLoggedIn}
                 />
                 <p className="text-xs text-muted-foreground">
                   Für die Terminbestätigung per Email
