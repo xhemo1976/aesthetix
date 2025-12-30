@@ -1,10 +1,62 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, Bot, Sparkles, TrendingUp, Shield } from "lucide-react";
-import { ChatWidget } from "@/components/chat-widget";
+import { headers } from 'next/headers'
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Calendar, Users, Bot, Sparkles, TrendingUp, Shield } from "lucide-react"
+import { ChatWidget } from "@/components/chat-widget"
+import { ClinicLanding } from "@/components/clinic-landing"
+import { getTenantBySubdomain, getTenantWithDetails } from "@/lib/actions/tenant-domain"
 
-export default function Home() {
+// Main domains that should show the SaaS landing page
+const MAIN_DOMAINS = ['esylana.de', 'www.esylana.de', 'localhost:3000', 'localhost']
+
+function getSubdomain(host: string): string | null {
+  // Remove port if present
+  const hostWithoutPort = host.split(':')[0]
+
+  // Check if it's a main domain
+  if (MAIN_DOMAINS.some(d => d.startsWith(hostWithoutPort))) {
+    return null
+  }
+
+  // Extract subdomain (e.g., "demo" from "demo.esylana.de")
+  const parts = hostWithoutPort.split('.')
+  if (parts.length >= 3) {
+    return parts[0]
+  }
+
+  // For testing: check if it's a subdomain-like domain
+  if (parts.length === 2 && parts[0] !== 'esylana' && parts[0] !== 'www') {
+    return parts[0]
+  }
+
+  return null
+}
+
+export default async function Home() {
+  const headersList = await headers()
+  const host = headersList.get('host') || ''
+  const subdomain = getSubdomain(host)
+
+  // If subdomain detected, show clinic landing page
+  if (subdomain) {
+    const { tenant, error } = await getTenantBySubdomain(subdomain)
+
+    if (tenant && !error) {
+      const { services, employees, locations } = await getTenantWithDetails(tenant.id)
+
+      return (
+        <ClinicLanding
+          tenant={tenant}
+          services={services}
+          employees={employees}
+          locations={locations}
+        />
+      )
+    }
+  }
+
+  // Default: Show SaaS landing page
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
@@ -212,5 +264,5 @@ export default function Home() {
       {/* Chat Widget */}
       <ChatWidget />
     </div>
-  );
+  )
 }
