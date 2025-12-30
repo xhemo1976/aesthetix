@@ -2,25 +2,56 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { signup } from '@/lib/actions/auth'
 import { Sparkles } from 'lucide-react'
 
 export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const result = await signup(formData)
+    const formData = new FormData(e.currentTarget)
 
-    if (result?.error) {
-      setError(result.error)
+    const data = {
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
+      fullName: formData.get('fullName') as string,
+      clinicName: formData.get('clinicName') as string,
+      businessType: formData.get('businessType') as string,
+    }
+
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setError(result.error || 'Ein Fehler ist aufgetreten')
+        setLoading(false)
+        return
+      }
+
+      if (result.success) {
+        router.push(result.redirect || '/dashboard')
+      }
+    } catch (err) {
+      console.error('Signup error:', err)
+      setError('Ein Netzwerkfehler ist aufgetreten. Bitte versuche es erneut.')
       setLoading(false)
     }
   }
@@ -50,7 +81,7 @@ export default function SignupPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
                   <p className="text-sm text-destructive">{error}</p>
