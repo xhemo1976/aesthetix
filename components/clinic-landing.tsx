@@ -121,7 +121,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=1920&q=80')`,
+            backgroundImage: `url('https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=1920&q=80')`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#0a0a0a]" />
