@@ -67,6 +67,14 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
   const primaryLocation = locations[0]
   const bookingUrl = `/book/${tenant.slug}`
 
+  const scrollToSection = (sectionId: string) => {
+    setIsMenuOpen(false)
+    const element = document.getElementById(sectionId)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   // Extract unique categories from services
   const categories = Array.from(
     new Set(services.map(s => s.category).filter((c): c is string => c !== null && c !== ''))
@@ -95,10 +103,10 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-              <a href="#about" className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Über uns</a>
-              <a href="#services" className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Behandlungen</a>
-              <a href="#team" className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Team</a>
-              <a href="#contact" className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Kontakt</a>
+              <button onClick={() => scrollToSection('about')} className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Über uns</button>
+              <button onClick={() => scrollToSection('services')} className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Behandlungen</button>
+              <button onClick={() => scrollToSection('team')} className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Team</button>
+              <button onClick={() => scrollToSection('contact')} className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Kontakt</button>
               <Link href={bookingUrl}>
                 <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-medium tracking-wider uppercase text-sm px-6">
                   Termin buchen
@@ -122,10 +130,10 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden bg-[#0a0a0a] border-t border-white/10 py-6 px-6 space-y-4">
-            <a href="#about" className="block text-sm tracking-widest uppercase text-white/70">Über uns</a>
-            <a href="#services" className="block text-sm tracking-widest uppercase text-white/70">Behandlungen</a>
-            <a href="#team" className="block text-sm tracking-widest uppercase text-white/70">Team</a>
-            <a href="#contact" className="block text-sm tracking-widest uppercase text-white/70">Kontakt</a>
+            <button onClick={() => scrollToSection('about')} className="block text-sm tracking-widest uppercase text-white/70">Über uns</button>
+            <button onClick={() => scrollToSection('services')} className="block text-sm tracking-widest uppercase text-white/70">Behandlungen</button>
+            <button onClick={() => scrollToSection('team')} className="block text-sm tracking-widest uppercase text-white/70">Team</button>
+            <button onClick={() => scrollToSection('contact')} className="block text-sm tracking-widest uppercase text-white/70">Kontakt</button>
             <Link href={bookingUrl}>
               <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium">
                 Termin buchen
@@ -168,20 +176,6 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
             Wo Perfektion auf Eleganz trifft.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href={bookingUrl}>
-              <Button size="lg" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-medium tracking-wider uppercase px-10 py-6 text-base">
-                <Calendar className="w-5 h-5 mr-2" />
-                Termin vereinbaren
-              </Button>
-            </Link>
-            <a href="#services">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 tracking-wider uppercase px-10 py-6 text-base">
-                Entdecken
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
-            </a>
-          </div>
         </div>
 
         {/* Scroll indicator */}

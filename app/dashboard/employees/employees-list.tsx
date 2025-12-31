@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmployeeDialog } from './employee-dialog'
 import { deleteEmployee, type Employee } from '@/lib/actions/employees'
-import { Phone, Mail, Clock, TrendingUp, Trash2 } from 'lucide-react'
+import { Phone, Mail, Clock, TrendingUp, Trash2, User } from 'lucide-react'
 
 const ROLE_LABELS: Record<string, string> = {
   stylist: 'Stylist/Kosmetiker',
@@ -62,16 +62,34 @@ export function EmployeesList({
           {employees.map(employee => (
             <Card key={employee.id} className={!employee.is_active ? 'opacity-60' : ''}>
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      {employee.first_name} {employee.last_name}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">{ROLE_LABELS[employee.role] || employee.role}</p>
+                <div className="flex items-start gap-4">
+                  {/* Profile Image */}
+                  <div className="flex-shrink-0">
+                    {employee.profile_image_url ? (
+                      <img
+                        src={employee.profile_image_url}
+                        alt={`${employee.first_name} ${employee.last_name}`}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border-2 border-border">
+                        <User className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
                   </div>
-                  {!employee.is_active && (
-                    <Badge variant="secondary">Inaktiv</Badge>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">
+                          {employee.first_name} {employee.last_name}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">{ROLE_LABELS[employee.role] || employee.role}</p>
+                      </div>
+                      {!employee.is_active && (
+                        <Badge variant="secondary">Inaktiv</Badge>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
