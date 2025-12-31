@@ -1,17 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { MessageCircle, X, Send, Loader2, Sparkles } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Sparkles, Calendar, Clock, Euro, Bot } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
+  quickReplies?: string[]
 }
 
 interface ChatWidgetProps {
@@ -25,23 +22,21 @@ export function ChatWidget({ tenantSlug, tenantName, className }: ChatWidgetProp
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
-      }
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages, isTyping])
 
   // Focus input when chat opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => inputRef.current?.focus(), 300)
     }
   }, [isOpen])
 
@@ -52,12 +47,27 @@ export function ChatWidget({ tenantSlug, tenantName, className }: ChatWidgetProp
         id: 'welcome',
         role: 'assistant',
         content: tenantName
-          ? `Hallo! Ich bin der virtuelle Assistent von ${tenantName}. Wie kann ich dir heute helfen? Du kannst mich nach unseren Behandlungen, Preisen oder zur Terminbuchung fragen.`
-          : 'Hallo! Ich bin der Esylana-Assistent. Wie kann ich dir heute helfen?'
+          ? `Willkommen bei ${tenantName}! ✨\n\nIch bin Ihr persönlicher Beauty-Berater. Wie kann ich Ihnen heute helfen?`
+          : 'Hallo! Ich bin der Esylana-Assistent. Wie kann ich Ihnen helfen?',
+        quickReplies: [
+          'Welche Behandlungen bietet ihr an?',
+          'Was kostet Botox?',
+          'Ich möchte einen Termin buchen',
+          'Wer sind eure Spezialisten?'
+        ]
       }
       setMessages([welcomeMessage])
     }
   }, [isOpen, messages.length, tenantName])
+
+  const handleQuickReply = (reply: string) => {
+    setInput(reply)
+    // Trigger submit after setting input
+    setTimeout(() => {
+      const form = document.getElementById('chat-form') as HTMLFormElement
+      if (form) form.requestSubmit()
+    }, 50)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,6 +82,7 @@ export function ChatWidget({ tenantSlug, tenantName, className }: ChatWidgetProp
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setIsLoading(true)
+    setIsTyping(true)
 
     try {
       const response = await fetch('/api/chat', {
@@ -92,10 +103,14 @@ export function ChatWidget({ tenantSlug, tenantName, className }: ChatWidgetProp
 
       const data = await response.json()
 
+      // Simulate typing delay for more natural feel
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: data.reply
+        content: data.reply,
+        quickReplies: data.quickReplies
       }
 
       setMessages(prev => [...prev, assistantMessage])
@@ -104,107 +119,165 @@ export function ChatWidget({ tenantSlug, tenantName, className }: ChatWidgetProp
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: 'Entschuldigung, es ist ein Fehler aufgetreten. Bitte versuche es erneut.'
+        content: 'Entschuldigung, es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.'
       }
       setMessages(prev => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
+      setIsTyping(false)
     }
   }
 
   return (
-    <div className={cn('fixed bottom-4 right-4 z-50', className)}>
+    <div className={cn('fixed bottom-6 right-6 z-50', className)}>
       {/* Chat Window */}
-      {isOpen && (
-        <Card className="w-[350px] sm:w-[400px] h-[500px] mb-4 flex flex-col shadow-2xl border-primary/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 bg-gradient-to-r from-primary to-pink-500 text-white rounded-t-lg">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              {tenantName ? `${tenantName} Chat` : 'Esylana Chat'}
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white hover:bg-white/20"
-              onClick={() => setIsOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </CardHeader>
+      <div className={cn(
+        'absolute bottom-20 right-0 w-[380px] sm:w-[420px] transition-all duration-300 ease-out origin-bottom-right',
+        isOpen
+          ? 'opacity-100 scale-100 translate-y-0'
+          : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
+      )}>
+        <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl shadow-black/50 flex flex-col h-[550px] overflow-hidden">
+          {/* Header */}
+          <div className="px-5 py-4 border-b border-white/10 bg-gradient-to-r from-amber-500/10 to-transparent">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-black" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-white">
+                    {tenantName ? `${tenantName}` : 'Esylana'} Assistent
+                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-xs text-white/50">Online</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
 
-          <CardContent className="flex-1 p-0 overflow-hidden">
-            <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
-              <div className="space-y-4">
-                {messages.map((message) => (
+          {/* Messages */}
+          <div
+            ref={scrollAreaRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+          >
+            {messages.map((message) => (
+              <div key={message.id} className="space-y-2">
+                <div
+                  className={cn(
+                    'flex',
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
+                  )}
+                >
+                  {message.role === 'assistant' && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mr-2 flex-shrink-0">
+                      <Sparkles className="w-4 h-4 text-black" />
+                    </div>
+                  )}
                   <div
-                    key={message.id}
                     className={cn(
-                      'flex',
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                      'max-w-[80%] rounded-2xl px-4 py-3 text-sm',
+                      message.role === 'user'
+                        ? 'bg-amber-500 text-black rounded-br-md'
+                        : 'bg-white/10 text-white rounded-bl-md'
                     )}
                   >
-                    <div
-                      className={cn(
-                        'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm',
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground rounded-br-md'
-                          : 'bg-muted rounded-bl-md'
-                      )}
-                    >
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                    </div>
+                    <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
                   </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-2.5">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
+                </div>
+
+                {/* Quick Replies */}
+                {message.role === 'assistant' && message.quickReplies && message.quickReplies.length > 0 && (
+                  <div className="flex flex-wrap gap-2 ml-10">
+                    {message.quickReplies.map((reply, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleQuickReply(reply)}
+                        className="px-3 py-1.5 text-xs border border-amber-500/30 text-amber-400 rounded-full hover:bg-amber-500/10 hover:border-amber-500/50 transition-colors"
+                      >
+                        {reply}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
-            </ScrollArea>
-          </CardContent>
+            ))}
 
-          <CardFooter className="p-3 border-t">
-            <form onSubmit={handleSubmit} className="flex w-full gap-2">
-              <Input
+            {/* Typing Indicator */}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mr-2 flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-black" />
+                </div>
+                <div className="bg-white/10 rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input Area */}
+          <div className="p-4 border-t border-white/10 bg-white/5">
+            <form id="chat-form" onSubmit={handleSubmit} className="flex gap-3">
+              <input
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Schreib eine Nachricht..."
+                placeholder="Schreiben Sie eine Nachricht..."
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 disabled:opacity-50 transition-colors"
               />
-              <Button
+              <button
                 type="submit"
-                size="icon"
                 disabled={!input.trim() || isLoading}
-                className="shrink-0"
+                className="w-12 h-12 bg-amber-500 hover:bg-amber-400 disabled:bg-white/10 disabled:text-white/30 text-black rounded-xl flex items-center justify-center transition-colors disabled:cursor-not-allowed"
               >
-                <Send className="h-4 w-4" />
-              </Button>
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
             </form>
-          </CardFooter>
-        </Card>
-      )}
+            <p className="text-center text-[10px] text-white/30 mt-2">
+              Powered by Esylana AI
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Toggle Button */}
-      <Button
+      <button
         onClick={() => setIsOpen(!isOpen)}
-        size="lg"
         className={cn(
-          'h-14 w-14 rounded-full shadow-lg transition-all duration-200',
-          'bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90',
-          isOpen && 'rotate-90'
+          'w-14 h-14 rounded-full shadow-lg shadow-black/30 flex items-center justify-center transition-all duration-300',
+          'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500',
+          isOpen && 'rotate-180'
         )}
       >
         {isOpen ? (
-          <X className="h-6 w-6" />
+          <X className="w-6 h-6 text-black" />
         ) : (
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="w-6 h-6 text-black" />
         )}
-      </Button>
+      </button>
+
+      {/* Notification Badge (when closed) */}
+      {!isOpen && messages.length === 0 && (
+        <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a0a0a] animate-pulse"></span>
+      )}
     </div>
   )
 }

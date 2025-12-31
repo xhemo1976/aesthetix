@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { ChatWidget } from '@/components/chat-widget'
 import {
   Calendar,
   Clock,
@@ -567,6 +568,9 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
           </div>
         </div>
       </footer>
+
+      {/* Chat Widget */}
+      <ChatWidget tenantSlug={tenant.slug} tenantName={tenant.name} />
     </div>
   )
 }
