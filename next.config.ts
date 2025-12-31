@@ -16,6 +16,13 @@ const nextConfig: NextConfig = {
 
   // Security Header
   poweredByHeader: false,
+
+  // Increase body size limit for image uploads (5 MB)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
+  },
 }
 
 export default nextConfig
