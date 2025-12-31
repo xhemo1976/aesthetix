@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { searchSimilar, buildRAGContext } from '@/lib/embeddings'
 
 // Lazy initialization - only create OpenAI client when needed
 let openaiClient: OpenAI | null = null
@@ -246,6 +247,32 @@ Termine können rund um die Uhr online gebucht werden: ${bookingUrl}
       }
     }
 
+    // RAG: Search for relevant context based on user's last message
+    let ragContext = ''
+    const lastUserMessage = messages[messages.length - 1]?.content || ''
+
+    if (tenantSlug && lastUserMessage) {
+      try {
+        const adminClient = createAdminClient()
+        const { data: ragTenant } = await adminClient
+          .from('tenants')
+          .select('id')
+          .ilike('slug', `${tenantSlug}%`)
+          .limit(1)
+          .single()
+
+        if (ragTenant) {
+          const ragResults = await searchSimilar((ragTenant as { id: string }).id, lastUserMessage, 5, 0.5)
+          if (ragResults.length > 0) {
+            ragContext = buildRAGContext(ragResults)
+          }
+        }
+      } catch (ragError) {
+        console.log('RAG search skipped:', ragError)
+        // Continue without RAG if it fails
+      }
+    }
+
     const systemPrompt = `Du bist ein professioneller, freundlicher KI-Beauty-Berater für ${tenantName}. Du bist ein Premium-Assistent für eine exklusive Schönheitsklinik.
 
 ## Deine Persönlichkeit
@@ -277,6 +304,7 @@ Termine können rund um die Uhr online gebucht werden: ${bookingUrl}
 - "Wie lange hält das?" → Realistische Zeiträume nennen (Botox: 3-6 Monate, Hyaluron: 6-12 Monate)
 
 ${tenantContext}
+${ragContext}
 
 Wenn keine spezifischen Klinik-Informationen verfügbar sind, stelle dich als Esylana-Assistent vor - die Premium-Buchungsplattform für Schönheitskliniken.`
 
@@ -301,7 +329,6 @@ Wenn keine spezifischen Klinik-Informationen verfügbar sind, stelle dich als Es
     const reply = completion.choices[0]?.message?.content || 'Entschuldigung, ich konnte keine Antwort generieren.'
 
     // Generate contextual quick replies
-    const lastUserMessage = messages[messages.length - 1]?.content || ''
     const hasAppointmentContext = reply.toLowerCase().includes('termin') || reply.toLowerCase().includes('buchung')
     const quickReplies = generateQuickReplies(lastUserMessage, reply, services, hasAppointmentContext)
 
