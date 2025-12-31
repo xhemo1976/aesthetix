@@ -97,7 +97,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
             <div className="hidden md:flex items-center gap-8">
               <a href="#about" className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Über uns</a>
               <a href="#services" className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Behandlungen</a>
-              <Link href={`/team/${tenant.slug}`} className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Team</Link>
+              <a href="#team" className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Team</a>
               <a href="#contact" className="text-sm tracking-widest uppercase text-white/70 hover:text-amber-400 transition-colors">Kontakt</a>
               <Link href={bookingUrl}>
                 <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-medium tracking-wider uppercase text-sm px-6">
@@ -124,7 +124,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
           <div className="md:hidden bg-[#0a0a0a] border-t border-white/10 py-6 px-6 space-y-4">
             <a href="#about" className="block text-sm tracking-widest uppercase text-white/70">Über uns</a>
             <a href="#services" className="block text-sm tracking-widest uppercase text-white/70">Behandlungen</a>
-            <Link href={`/team/${tenant.slug}`} className="block text-sm tracking-widest uppercase text-white/70">Team</Link>
+            <a href="#team" className="block text-sm tracking-widest uppercase text-white/70">Team</a>
             <a href="#contact" className="block text-sm tracking-widest uppercase text-white/70">Kontakt</a>
             <Link href={bookingUrl}>
               <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium">
