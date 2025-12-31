@@ -32,6 +32,8 @@ interface Employee {
   name: string
   role: string | null
   avatar_url: string | null
+  profile_image_url: string | null
+  bio: string | null
 }
 
 interface Location {
@@ -355,9 +357,9 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
               {employees.map((employee) => (
                 <div key={employee.id} className="group text-center">
                   <div className="relative mb-6 mx-auto w-48 h-48 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-amber-500/50 transition-colors">
-                    {employee.avatar_url ? (
+                    {(employee.profile_image_url || employee.avatar_url) ? (
                       <img
-                        src={employee.avatar_url}
+                        src={employee.profile_image_url || employee.avatar_url || ''}
                         alt={employee.name}
                         className="w-full h-full object-cover"
                       />
@@ -376,6 +378,16 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
                   )}
                 </div>
               ))}
+            </div>
+
+            {/* Link to full team page */}
+            <div className="text-center mt-12">
+              <Link href={`/team/${tenant.slug}`}>
+                <Button variant="outline" className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10 tracking-wider uppercase">
+                  Mehr über unser Team
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
             </div>
           </div>
         </section>

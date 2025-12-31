@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { createEmployee, updateEmployee, type Employee } from '@/lib/actions/employees'
-import { Plus } from 'lucide-react'
+import { createEmployee, updateEmployee, uploadEmployeeImage, deleteEmployeeImage, type Employee } from '@/lib/actions/employees'
+import { Plus, Upload, X, User, Loader2 } from 'lucide-react'
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const DAY_NAMES = {
@@ -31,7 +31,11 @@ const ROLES = [
 export function EmployeeDialog({ employee, services }: { employee?: Employee; services: Array<{ id: string; name: string }> }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [selectedServices, setSelectedServices] = useState<string[]>(employee?.specialties || [])
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(employee?.profile_image_url || null)
+  const [bio, setBio] = useState(employee?.bio || '')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [workSchedule, setWorkSchedule] = useState<Record<string, { start: string; end: string; enabled: boolean }>>(
     DAYS.reduce((acc, day) => {
       const existing = employee?.work_schedule?.[day]
@@ -41,6 +45,37 @@ export function EmployeeDialog({ employee, services }: { employee?: Employee; se
       return acc
     }, {} as Record<string, { start: string; end: string; enabled: boolean }>)
   )
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingImage(true)
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const result = await uploadEmployeeImage(formData)
+
+    if (result.error) {
+      alert('Fehler beim Hochladen: ' + result.error)
+    } else if (result.url) {
+      // Delete old image if exists
+      if (profileImageUrl) {
+        await deleteEmployeeImage(profileImageUrl)
+      }
+      setProfileImageUrl(result.url)
+    }
+
+    setUploadingImage(false)
+  }
+
+  const handleRemoveImage = async () => {
+    if (profileImageUrl) {
+      await deleteEmployeeImage(profileImageUrl)
+      setProfileImageUrl(null)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -59,6 +94,10 @@ export function EmployeeDialog({ employee, services }: { employee?: Employee; se
       return acc
     }, {} as Record<string, { start: string; end: string }>)
     formData.set('work_schedule', JSON.stringify(activeSchedule))
+
+    // Add profile image URL and bio
+    formData.set('profile_image_url', profileImageUrl || '')
+    formData.set('bio', bio)
 
     const result = employee
       ? await updateEmployee(employee.id, formData)
@@ -92,6 +131,66 @@ export function EmployeeDialog({ employee, services }: { employee?: Employee; se
           <DialogTitle>{employee ? 'Mitarbeiter bearbeiten' : 'Neuer Mitarbeiter'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Profile Image Upload */}
+          <div>
+            <Label>Profilbild</Label>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="relative">
+                {profileImageUrl ? (
+                  <div className="relative">
+                    <img
+                      src={profileImageUrl}
+                      alt="Profilbild"
+                      className="w-24 h-24 rounded-full object-cover border-2 border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-border">
+                    <User className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                >
+                  {uploadingImage ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Hochladen...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Bild hochladen
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  JPEG, PNG, WebP oder GIF. Max 5MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="first_name">Vorname *</Label>
@@ -128,6 +227,21 @@ export function EmployeeDialog({ employee, services }: { employee?: Employee; se
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Bio/Description */}
+          <div>
+            <Label htmlFor="bio">Beschreibung / Bio</Label>
+            <textarea
+              id="bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Kurze Beschreibung des Mitarbeiters für die Team-Seite..."
+              className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Wird auf der öffentlichen Team-Seite angezeigt
+            </p>
           </div>
 
           <div>
@@ -240,7 +354,7 @@ export function EmployeeDialog({ employee, services }: { employee?: Employee; se
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || uploadingImage}>
               {loading ? 'Speichern...' : 'Speichern'}
             </Button>
           </div>

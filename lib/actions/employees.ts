@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { v4 as uuidv4 } from 'uuid'
 
 export type Employee = {
   id: string
@@ -16,6 +17,8 @@ export type Employee = {
   commission_percentage: number
   work_schedule: Record<string, { start: string; end: string }>
   is_active: boolean
+  profile_image_url: string | null
+  bio: string | null
   created_at: string
   updated_at: string
 }
@@ -130,6 +133,8 @@ export async function createEmployee(formData: FormData) {
     commission_percentage: parseFloat((formData.get('commission_percentage') as string) || '0'),
     work_schedule,
     is_active: formData.get('is_active') === 'true',
+    profile_image_url: (formData.get('profile_image_url') as string) || null,
+    bio: (formData.get('bio') as string) || null,
   })
 
   if (error) {
@@ -171,6 +176,8 @@ export async function updateEmployee(id: string, formData: FormData) {
       commission_percentage: parseFloat((formData.get('commission_percentage') as string) || '0'),
       work_schedule,
       is_active: formData.get('is_active') === 'true',
+      profile_image_url: (formData.get('profile_image_url') as string) || null,
+      bio: (formData.get('bio') as string) || null,
     })
     .eq('id', id)
 
@@ -258,4 +265,94 @@ export async function getEmployeeStats(employeeId: string, startDate?: Date, end
   }
 
   return { stats, error: null }
+}
+
+export async function uploadEmployeeImage(formData: FormData) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { url: null, error: 'Not authenticated' }
+  }
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('tenant_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.tenant_id) {
+    return { url: null, error: 'No tenant found' }
+  }
+
+  const file = formData.get('file') as File
+  if (!file) {
+    return { url: null, error: 'No file provided' }
+  }
+
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  if (!allowedTypes.includes(file.type)) {
+    return { url: null, error: 'Invalid file type. Only JPEG, PNG, WebP and GIF are allowed.' }
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    return { url: null, error: 'File too large. Maximum size is 5MB.' }
+  }
+
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${profile.tenant_id}/${uuidv4()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('employee-images')
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+  if (uploadError) {
+    console.error('Error uploading image:', uploadError)
+    return { url: null, error: uploadError.message }
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('employee-images')
+    .getPublicUrl(fileName)
+
+  return { url: publicUrl, error: null }
+}
+
+export async function deleteEmployeeImage(imageUrl: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Not authenticated' }
+  }
+
+  // Extract file path from URL
+  const urlParts = imageUrl.split('/employee-images/')
+  if (urlParts.length < 2) {
+    return { error: 'Invalid image URL' }
+  }
+
+  const filePath = urlParts[1]
+
+  const { error } = await supabase.storage
+    .from('employee-images')
+    .remove([filePath])
+
+  if (error) {
+    console.error('Error deleting image:', error)
+    return { error: error.message }
+  }
+
+  return { error: null }
 }

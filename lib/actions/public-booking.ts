@@ -19,6 +19,8 @@ export type Employee = {
   specialties: string[]
   work_schedule: Record<string, { start: string; end: string }>
   is_active: boolean
+  profile_image_url: string | null
+  bio: string | null
 }
 
 // Generate random confirmation token

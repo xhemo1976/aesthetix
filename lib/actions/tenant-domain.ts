@@ -72,6 +72,8 @@ interface Employee {
   name: string
   role: string | null
   avatar_url: string | null
+  profile_image_url: string | null
+  bio: string | null
 }
 
 interface Location {
