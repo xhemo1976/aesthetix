@@ -53,6 +53,86 @@ interface LocationInfo {
   phone: string | null
 }
 
+// Intent detection for smart actions
+type UserIntent = 'booking' | 'pricing' | 'info' | 'consultation' | 'complaint' | 'general'
+
+interface ActionButton {
+  type: 'link' | 'whatsapp' | 'phone' | 'booking'
+  label: string
+  value: string
+}
+
+function detectIntent(message: string): UserIntent {
+  const lower = message.toLowerCase()
+
+  // Booking intent
+  if (lower.includes('termin') || lower.includes('buchen') || lower.includes('reserv') ||
+      lower.includes('wann') || lower.includes('zeit') || lower.includes('frei')) {
+    return 'booking'
+  }
+
+  // Pricing intent
+  if (lower.includes('preis') || lower.includes('kost') || lower.includes('€') ||
+      lower.includes('euro') || lower.includes('teuer') || lower.includes('günstig')) {
+    return 'pricing'
+  }
+
+  // Consultation request
+  if (lower.includes('berat') || lower.includes('empfehl') || lower.includes('welche behandlung') ||
+      lower.includes('was hilft') || lower.includes('was würden sie')) {
+    return 'consultation'
+  }
+
+  // Complaint detection
+  if (lower.includes('beschwer') || lower.includes('unzufried') || lower.includes('problem') ||
+      lower.includes('schlecht') || lower.includes('ärger')) {
+    return 'complaint'
+  }
+
+  // Info request
+  if (lower.includes('info') || lower.includes('wie lange') || lower.includes('was ist') ||
+      lower.includes('erklär') || lower.includes('beschreib')) {
+    return 'info'
+  }
+
+  return 'general'
+}
+
+function generateActionButtons(
+  intent: UserIntent,
+  bookingUrl: string,
+  whatsappNumber: string | null,
+  phone: string | null
+): ActionButton[] {
+  const buttons: ActionButton[] = []
+
+  if (intent === 'booking') {
+    buttons.push({
+      type: 'booking',
+      label: 'Jetzt Termin buchen',
+      value: bookingUrl
+    })
+  }
+
+  if (whatsappNumber && (intent === 'booking' || intent === 'consultation')) {
+    buttons.push({
+      type: 'whatsapp',
+      label: 'WhatsApp schreiben',
+      value: `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`
+    })
+  }
+
+  if (phone && intent === 'complaint') {
+    buttons.push({
+      type: 'phone',
+      label: 'Direkt anrufen',
+      value: `tel:${phone.replace(/[^0-9+]/g, '')}`
+    })
+  }
+
+  return buttons
+}
+
 // Generate smart quick replies based on conversation
 function generateQuickReplies(
   userMessage: string,
@@ -328,13 +408,39 @@ Wenn keine spezifischen Klinik-Informationen verfügbar sind, stelle dich als Es
 
     const reply = completion.choices[0]?.message?.content || 'Entschuldigung, ich konnte keine Antwort generieren.'
 
+    // Detect user intent for smart actions
+    const intent = detectIntent(lastUserMessage)
+
+    // Generate action buttons based on intent
+    let whatsappNumber: string | null = null
+    let contactPhone: string | null = null
+
+    if (tenantSlug) {
+      const adminClient = createAdminClient()
+      const { data: tenantContact } = await adminClient
+        .from('tenants')
+        .select('whatsapp_number, contact_phone')
+        .ilike('slug', `${tenantSlug}%`)
+        .limit(1)
+        .single()
+
+      if (tenantContact) {
+        whatsappNumber = (tenantContact as { whatsapp_number: string | null }).whatsapp_number
+        contactPhone = (tenantContact as { contact_phone: string | null }).contact_phone
+      }
+    }
+
+    const actionButtons = generateActionButtons(intent, bookingUrl, whatsappNumber, contactPhone)
+
     // Generate contextual quick replies
     const hasAppointmentContext = reply.toLowerCase().includes('termin') || reply.toLowerCase().includes('buchung')
     const quickReplies = generateQuickReplies(lastUserMessage, reply, services, hasAppointmentContext)
 
     return NextResponse.json({
       reply,
-      quickReplies
+      quickReplies,
+      actionButtons,
+      intent
     })
   } catch (error) {
     console.error('Chat API error:', error)
