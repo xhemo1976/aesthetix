@@ -178,20 +178,24 @@ export async function generateTenantEmbeddings(tenantId: string): Promise<{
   let errors = 0
 
   // Get tenant info
-  const { data: tenantRaw } = await adminClient
+  console.log('Looking up tenant with ID:', tenantId)
+  const { data: tenantRaw, error: tenantError } = await adminClient
     .from('tenants')
-    .select('name, address, city, description')
+    .select('name, address, city')
     .eq('id', tenantId)
     .single()
+
+  console.log('Tenant lookup:', { tenantRaw, tenantError })
 
   const tenant = tenantRaw as TenantData | null
 
   if (!tenant) {
+    console.error('Tenant not found for ID:', tenantId)
     return { success: false, processed: 0, errors: 1 }
   }
 
   // Store tenant general info embedding
-  const tenantContent = `${tenant.name} ist eine Schönheitsklinik${tenant.address ? ` in ${tenant.city || tenant.address}` : ''}. ${tenant.description || ''}`
+  const tenantContent = `${tenant.name} ist eine Schönheitsklinik${tenant.address ? ` in ${tenant.city || tenant.address}` : ''}.`
   const tenantSuccess = await storeEmbedding(
     tenantId,
     'general',

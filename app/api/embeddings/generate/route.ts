@@ -6,6 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     const { tenantSlug, tenantId } = await request.json()
 
+    console.log('Embeddings generate request:', { tenantSlug, tenantId })
+
     if (!tenantSlug && !tenantId) {
       return NextResponse.json(
         { error: 'tenantSlug or tenantId is required' },
@@ -18,25 +20,30 @@ export async function POST(request: NextRequest) {
     // If slug provided, get tenant ID
     if (tenantSlug && !tenantId) {
       const adminClient = createAdminClient()
-      const { data: tenant } = await adminClient
+      const { data: tenant, error: tenantError } = await adminClient
         .from('tenants')
-        .select('id')
+        .select('id, name, slug')
         .ilike('slug', `${tenantSlug}%`)
         .limit(1)
         .single()
 
+      console.log('Tenant lookup result:', { tenant, tenantError })
+
       if (!tenant) {
         return NextResponse.json(
-          { error: 'Tenant nicht gefunden' },
+          { error: 'Tenant nicht gefunden', debug: { tenantSlug, tenantError } },
           { status: 404 }
         )
       }
 
       resolvedTenantId = (tenant as { id: string }).id
+      console.log('Resolved tenant ID:', resolvedTenantId)
     }
 
     // Generate embeddings
+    console.log('Generating embeddings for tenant:', resolvedTenantId)
     const result = await generateTenantEmbeddings(resolvedTenantId)
+    console.log('Embeddings result:', result)
 
     return NextResponse.json({
       success: result.success,
