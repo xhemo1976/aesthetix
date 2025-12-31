@@ -157,9 +157,17 @@ export function ChatWidget({ tenantSlug, tenantName, className }: ChatWidgetProp
                   <h3 className="font-medium text-white">
                     {tenantName ? `${tenantName}` : 'Esylana'} Assistent
                   </h3>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span className="text-xs text-white/50">Online</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                      <span className="text-xs text-white/50">Online</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs" title="Verfügbare Sprachen">
+                      <span>🇩🇪</span>
+                      <span>🇬🇧</span>
+                      <span>🇹🇷</span>
+                      <span>🇷🇺</span>
+                    </div>
                   </div>
                 </div>
               </div>
