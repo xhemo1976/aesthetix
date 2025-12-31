@@ -75,7 +75,7 @@ export default async function PublicBookingPage({
   // If multiple locations, show location selector
   if (hasMultipleLocations) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <div className="min-h-screen bg-[#0a0a0a] text-white">
         <div className="container mx-auto px-4 py-8 max-w-2xl">
           {/* Header */}
           <header className="text-center mb-8">
@@ -86,19 +86,19 @@ export default async function PublicBookingPage({
                 className="h-16 mx-auto mb-4 rounded-lg"
               />
             ) : (
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-amber-400" />
               </div>
             )}
-            <h1 className="text-3xl font-bold">{tenant.name}</h1>
-            <p className="text-muted-foreground mt-2">Wähle einen Standort</p>
+            <h1 className="text-3xl font-bold text-white">{tenant.name}</h1>
+            <p className="text-white/60 mt-2">Wähle einen Standort</p>
           </header>
 
           {/* Location Selector */}
           <LocationSelector locations={locations} tenantSlug={slug} />
 
           {/* Footer */}
-          <footer className="text-center mt-8 text-sm text-muted-foreground">
+          <footer className="text-center mt-8 text-sm text-white/40">
             <p>Powered by Esylana</p>
           </footer>
         </div>
@@ -118,7 +118,7 @@ export default async function PublicBookingPage({
   ])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         {/* Header */}
         <header className="text-center mb-8">
@@ -127,30 +127,30 @@ export default async function PublicBookingPage({
             {customerData ? (
               <div className="flex items-center gap-3">
                 <Link href="/customer/termine">
-                  <Button variant="ghost" size="sm">
+                  <button className="flex items-center px-3 py-2 text-sm text-white/70 hover:text-amber-400 transition-colors">
                     <User className="w-4 h-4 mr-2" />
                     {customerData.firstName || 'Meine Termine'}
-                  </Button>
+                  </button>
                 </Link>
                 <form action="/api/auth/logout" method="POST">
                   <input type="hidden" name="redirect" value={`/book/${slug}`} />
-                  <Button variant="outline" size="sm" type="submit">
+                  <button type="submit" className="flex items-center px-3 py-2 text-sm border border-white/20 rounded-lg text-white/70 hover:text-amber-400 hover:border-amber-400/50 transition-colors">
                     <LogOut className="w-4 h-4 mr-2" />
                     Abmelden
-                  </Button>
+                  </button>
                 </form>
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Link href={`/customer/login?redirect=/book/${slug}&tenant=${slug}`}>
-                  <Button variant="ghost" size="sm">
+                  <button className="px-4 py-2 text-sm text-white/70 hover:text-amber-400 transition-colors">
                     Anmelden
-                  </Button>
+                  </button>
                 </Link>
                 <Link href={`/customer/signup?redirect=/book/${slug}&tenant=${slug}`}>
-                  <Button variant="outline" size="sm">
+                  <button className="px-4 py-2 text-sm border border-white/20 rounded-lg text-white/70 hover:text-amber-400 hover:border-amber-400/50 transition-colors">
                     Registrieren
-                  </Button>
+                  </button>
                 </Link>
               </div>
             )}
@@ -163,14 +163,14 @@ export default async function PublicBookingPage({
               className="h-16 mx-auto mb-4 rounded-lg"
             />
           ) : (
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-amber-400" />
             </div>
           )}
-          <h1 className="text-3xl font-bold">{tenant.name}</h1>
-          <p className="text-muted-foreground mt-2">Online Terminbuchung</p>
+          <h1 className="text-3xl font-bold text-white">{tenant.name}</h1>
+          <p className="text-white/60 mt-2">Online Terminbuchung</p>
           {primaryLocation && (primaryLocation.address || primaryLocation.city) && (
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-white/40 mt-1">
               {primaryLocation.address}{primaryLocation.address && primaryLocation.city ? ', ' : ''}{primaryLocation.city}
             </p>
           )}
@@ -186,7 +186,7 @@ export default async function PublicBookingPage({
         />
 
         {/* Footer */}
-        <footer className="text-center mt-8 text-sm text-muted-foreground">
+        <footer className="text-center mt-8 text-sm text-white/40">
           <p>Powered by Esylana</p>
         </footer>
       </div>

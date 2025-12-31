@@ -2,11 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   ArrowLeft,
   ArrowRight,
@@ -237,10 +232,10 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
                 ${index < currentStepIndex
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-amber-500 text-black'
                   : index === currentStepIndex
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
+                    ? 'bg-amber-500 text-black'
+                    : 'bg-white/10 text-white/50'
                 }`}
             >
               {index < currentStepIndex ? (
@@ -252,7 +247,7 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
             {index < steps.length - 1 && (
               <div
                 className={`flex-1 h-1 mx-2 rounded ${
-                  index < currentStepIndex ? 'bg-primary' : 'bg-muted'
+                  index < currentStepIndex ? 'bg-amber-500' : 'bg-white/10'
                 }`}
               />
             )}
@@ -262,44 +257,44 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
           {error}
         </div>
       )}
 
       {/* Step Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
+      <div className="bg-white/5 border border-white/10 rounded-xl">
+        <div className="p-6 border-b border-white/10">
+          <h2 className="text-xl font-semibold text-white">
             {currentStep === 'service' && 'Wähle eine Behandlung'}
             {currentStep === 'employee' && 'Wähle einen Mitarbeiter'}
             {currentStep === 'datetime' && 'Wähle Datum & Uhrzeit'}
             {currentStep === 'customer' && 'Deine Kontaktdaten'}
             {currentStep === 'confirm' && 'Bestätigung'}
-          </CardTitle>
-          <CardDescription>
+          </h2>
+          <p className="text-white/60 mt-1">
             {currentStep === 'service' && 'Welche Behandlung möchtest du buchen?'}
             {currentStep === 'employee' && 'Optional: Wähle deinen Wunsch-Mitarbeiter'}
             {currentStep === 'datetime' && 'Wann passt es dir am besten?'}
             {currentStep === 'customer' && 'Wir benötigen deine Kontaktdaten für die Bestätigung'}
             {currentStep === 'confirm' && 'Überprüfe deine Buchung'}
-          </CardDescription>
-        </CardHeader>
+          </p>
+        </div>
 
-        <CardContent>
+        <div className="p-6">
           {/* Service Selection */}
           {currentStep === 'service' && (
             <div className="space-y-4">
               {/* Category Tabs */}
               {categories.length > 0 && (
-                <div className="flex flex-wrap gap-2 pb-4 border-b">
+                <div className="flex flex-wrap gap-2 pb-4 border-b border-white/10">
                   <button
                     type="button"
                     onClick={() => setSelectedCategory(null)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       selectedCategory === null
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        ? 'bg-amber-500 text-black'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
                     }`}
                   >
                     Alle
@@ -311,8 +306,8 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
                       onClick={() => setSelectedCategory(category)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         selectedCategory === category
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          ? 'bg-amber-500 text-black'
+                          : 'bg-white/10 text-white/60 hover:bg-white/20'
                       }`}
                     >
                       {category}
@@ -324,7 +319,7 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
               {/* Service List */}
               <div className="grid gap-3">
               {filteredServices.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
+                <p className="text-white/50 text-center py-8">
                   Keine Services verfügbar
                 </p>
               ) : (
@@ -335,24 +330,24 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
                     onClick={() => setSelectedService(service)}
                     className={`p-4 rounded-lg border text-left transition-all ${
                       selectedService?.id === service.id
-                        ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                        : 'border-border hover:border-primary/50'
+                        ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30'
+                        : 'border-white/10 hover:border-amber-500/50 bg-white/5'
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-medium">{service.name}</h3>
+                        <h3 className="font-medium text-white">{service.name}</h3>
                         {service.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-sm text-white/50 mt-1">
                             {service.description}
                           </p>
                         )}
-                        <p className="text-sm text-muted-foreground mt-2">
+                        <p className="text-sm text-white/50 mt-2">
                           <Clock className="w-3 h-3 inline mr-1" />
                           {service.duration_minutes} Minuten
                         </p>
                       </div>
-                      <span className="font-semibold text-primary">
+                      <span className="font-semibold text-amber-400">
                         {formatPrice(service.price)}
                       </span>
                     </div>
@@ -371,17 +366,17 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
                 onClick={() => setSelectedEmployee(null)}
                 className={`p-4 rounded-lg border text-left transition-all ${
                   selectedEmployee === null
-                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                    : 'border-border hover:border-primary/50'
+                    ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30'
+                    : 'border-white/10 hover:border-amber-500/50 bg-white/5'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white/50" />
                   </div>
                   <div>
-                    <h3 className="font-medium">Egal / Nächster Verfügbarer</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-medium text-white">Egal / Nächster Verfügbarer</h3>
+                    <p className="text-sm text-white/50">
                       Wir wählen automatisch einen verfügbaren Mitarbeiter
                     </p>
                   </div>
@@ -395,25 +390,25 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
                   onClick={() => setSelectedEmployee(employee)}
                   className={`p-4 rounded-lg border text-left transition-all ${
                     selectedEmployee?.id === employee.id
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                      : 'border-border hover:border-primary/50'
+                      ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30'
+                      : 'border-white/10 hover:border-amber-500/50 bg-white/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="w-5 h-5 text-primary" />
+                    <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                      <User className="w-5 h-5 text-amber-400" />
                     </div>
                     <div>
-                      <h3 className="font-medium">
+                      <h3 className="font-medium text-white">
                         {employee.first_name} {employee.last_name}
                       </h3>
                       {employee.role && (
-                        <p className="text-sm text-muted-foreground capitalize">
+                        <p className="text-sm text-white/50 capitalize">
                           {employee.role}
                         </p>
                       )}
                       {employee.specialties?.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-white/40 mt-1">
                           {employee.specialties.join(', ')}
                         </p>
                       )}
@@ -429,45 +424,45 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
             <div className="space-y-6">
               {/* Date Picker */}
               <div className="space-y-2">
-                <Label htmlFor="date">
-                  <Calendar className="w-4 h-4 inline mr-2" />
+                <label htmlFor="date" className="text-sm font-medium text-white flex items-center">
+                  <Calendar className="w-4 h-4 inline mr-2 text-amber-400" />
                   Datum
-                </Label>
-                <Input
+                </label>
+                <input
                   id="date"
                   type="date"
                   min={today}
                   value={selectedDate}
                   onChange={e => setSelectedDate(e.target.value)}
-                  className="w-full"
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
 
               {/* Time Slots */}
               {selectedDate && (
                 <div className="space-y-2">
-                  <Label>
-                    <Clock className="w-4 h-4 inline mr-2" />
+                  <label className="text-sm font-medium text-white flex items-center">
+                    <Clock className="w-4 h-4 inline mr-2 text-amber-400" />
                     Uhrzeit
-                  </Label>
+                  </label>
 
                   {loadingSlots ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                      <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
                     </div>
                   ) : availableSlots.length === 0 ? (
                     <div className="text-center py-8 space-y-4">
-                      <p className="text-muted-foreground">
+                      <p className="text-white/50">
                         Keine verfügbaren Zeiten an diesem Tag
                       </p>
-                      <Button
-                        variant="outline"
+                      <button
+                        type="button"
                         onClick={() => setCurrentStep('waitlist')}
-                        className="mx-auto"
+                        className="mx-auto px-4 py-2 border border-white/20 rounded-lg text-white/70 hover:text-amber-400 hover:border-amber-500/50 transition-colors flex items-center"
                       >
                         <ClockIcon className="w-4 h-4 mr-2" />
                         Auf Warteliste setzen
-                      </Button>
+                      </button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-4 gap-2">
@@ -478,8 +473,8 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
                           onClick={() => setSelectedTime(slot)}
                           className={`p-2 rounded-lg border text-sm font-medium transition-all ${
                             selectedTime === slot
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border hover:border-primary/50'
+                              ? 'border-amber-500 bg-amber-500 text-black'
+                              : 'border-white/10 text-white/70 hover:border-amber-500/50 bg-white/5'
                           }`}
                         >
                           {slot}
@@ -496,8 +491,8 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
           {currentStep === 'customer' && (
             <div className="space-y-4">
               {isLoggedIn && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-700">
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <p className="text-sm text-green-400">
                     <Check className="w-4 h-4 inline mr-2" />
                     Deine Daten wurden automatisch ausgefüllt
                   </p>
@@ -506,94 +501,102 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">Vorname *</Label>
-                  <Input
+                  <label htmlFor="firstName" className="text-sm font-medium text-white">Vorname *</label>
+                  <input
                     id="firstName"
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
                     placeholder="Max"
                     required
+                    className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Nachname *</Label>
-                  <Input
+                  <label htmlFor="lastName" className="text-sm font-medium text-white">Nachname *</label>
+                  <input
                     id="lastName"
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
                     placeholder="Mustermann"
                     required
+                    className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
+                <label htmlFor="email" className="text-sm font-medium text-white">Email</label>
+                <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="max@beispiel.de"
                   disabled={isLoggedIn}
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none disabled:opacity-50"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-white/40">
                   Für die Terminbestätigung per Email
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefon / WhatsApp</Label>
-                <Input
+                <label htmlFor="phone" className="text-sm font-medium text-white">Telefon / WhatsApp</label>
+                <input
                   id="phone"
                   type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   placeholder="+49 123 456789"
+                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-white/40">
                   Für die Terminbestätigung per WhatsApp
                 </p>
               </div>
 
               {!email && !phone && (
-                <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                <p className="text-sm text-amber-400 bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg">
                   Bitte gib mindestens eine Email-Adresse oder Telefonnummer an
                 </p>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Anmerkungen (optional)</Label>
+                <label htmlFor="notes" className="text-sm font-medium text-white">Anmerkungen (optional)</label>
                 <textarea
                   id="notes"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder="Besondere Wünsche oder Hinweise..."
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex min-h-[80px] w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
 
-              <div className="space-y-3 pt-4 border-t">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
+              <div className="space-y-3 pt-4 border-t border-white/10">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
                     id="smsConsent"
                     checked={smsConsent}
-                    onCheckedChange={(checked) => setSmsConsent(checked === true)}
+                    onChange={(e) => setSmsConsent(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-amber-500 focus:ring-amber-500 focus:ring-offset-0"
                   />
-                  <Label htmlFor="smsConsent" className="text-sm">
+                  <label htmlFor="smsConsent" className="text-sm text-white/70">
                     Ich möchte Terminerinnerungen per SMS/WhatsApp erhalten
-                  </Label>
+                  </label>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
                     id="marketingConsent"
                     checked={marketingConsent}
-                    onCheckedChange={(checked) => setMarketingConsent(checked === true)}
+                    onChange={(e) => setMarketingConsent(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-amber-500 focus:ring-amber-500 focus:ring-offset-0"
                   />
-                  <Label htmlFor="marketingConsent" className="text-sm">
+                  <label htmlFor="marketingConsent" className="text-sm text-white/70">
                     Ich möchte über Angebote und Neuigkeiten informiert werden
-                  </Label>
+                  </label>
                 </div>
               </div>
             </div>
@@ -602,73 +605,79 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
           {/* Confirmation */}
           {currentStep === 'confirm' && selectedService && (
             <div className="space-y-4">
-              <div className="p-4 bg-muted rounded-lg space-y-3">
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Behandlung</span>
-                  <span className="font-medium">{selectedService.name}</span>
+                  <span className="text-white/50">Behandlung</span>
+                  <span className="font-medium text-white">{selectedService.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Dauer</span>
-                  <span>{selectedService.duration_minutes} Minuten</span>
+                  <span className="text-white/50">Dauer</span>
+                  <span className="text-white">{selectedService.duration_minutes} Minuten</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Mitarbeiter</span>
-                  <span>
+                  <span className="text-white/50">Mitarbeiter</span>
+                  <span className="text-white">
                     {selectedEmployee
                       ? `${selectedEmployee.first_name} ${selectedEmployee.last_name}`
                       : 'Nächster Verfügbarer'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Datum</span>
-                  <span>{formatDate(selectedDate)}</span>
+                  <span className="text-white/50">Datum</span>
+                  <span className="text-white">{formatDate(selectedDate)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Uhrzeit</span>
-                  <span>{selectedTime} Uhr</span>
+                  <span className="text-white/50">Uhrzeit</span>
+                  <span className="text-white">{selectedTime} Uhr</span>
                 </div>
-                <div className="flex justify-between pt-3 border-t">
-                  <span className="font-medium">Preis</span>
-                  <span className="font-bold text-primary">
+                <div className="flex justify-between pt-3 border-t border-white/10">
+                  <span className="font-medium text-white">Preis</span>
+                  <span className="font-bold text-amber-400">
                     {formatPrice(selectedService.price)}
                   </span>
                 </div>
               </div>
 
-              <div className="p-4 bg-muted rounded-lg space-y-2">
-                <h4 className="font-medium">Deine Daten</h4>
-                <p>{firstName} {lastName}</p>
-                {email && <p className="text-sm text-muted-foreground">{email}</p>}
-                {phone && <p className="text-sm text-muted-foreground">{phone}</p>}
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-2">
+                <h4 className="font-medium text-white">Deine Daten</h4>
+                <p className="text-white">{firstName} {lastName}</p>
+                {email && <p className="text-sm text-white/50">{email}</p>}
+                {phone && <p className="text-sm text-white/50">{phone}</p>}
                 {notes && (
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-sm text-white/50 mt-2">
                     Anmerkungen: {notes}
                   </p>
                 )}
               </div>
 
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-white/50">
                 Nach der Buchung erhältst du eine Bestätigung per{' '}
                 {email && phone ? 'Email und WhatsApp' : email ? 'Email' : 'WhatsApp'}.
               </p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Navigation Buttons */}
       <div className="flex justify-between">
-        <Button
-          variant="outline"
+        <button
+          type="button"
           onClick={goBack}
           disabled={currentStepIndex === 0}
+          className="flex items-center px-5 py-3 border border-white/20 rounded-lg text-white/70 hover:text-amber-400 hover:border-amber-500/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Zurück
-        </Button>
+        </button>
 
         {currentStep === 'confirm' ? (
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex items-center px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg transition-colors disabled:opacity-50"
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -680,12 +689,17 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
                 Jetzt buchen
               </>
             )}
-          </Button>
+          </button>
         ) : (
-          <Button onClick={goNext} disabled={!canProceed()}>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!canProceed()}
+            className="flex items-center px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
             Weiter
             <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+          </button>
         )}
       </div>
     </div>

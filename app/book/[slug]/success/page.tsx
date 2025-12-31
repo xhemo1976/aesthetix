@@ -1,8 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getPublicAppointmentByToken } from '@/lib/actions/public-booking'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
   CheckCircle,
   Calendar,
@@ -65,104 +63,104 @@ export default async function BookingSuccessPage({
     : null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         {/* Success Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+            <CheckCircle className="w-10 h-10 text-green-400" />
           </div>
-          <h1 className="text-3xl font-bold text-green-600">Buchung erfolgreich!</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-3xl font-bold text-green-400">Buchung erfolgreich!</h1>
+          <p className="text-white/60 mt-2">
             Dein Termin wurde erfolgreich angelegt
           </p>
         </div>
 
         {/* Appointment Details */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
+        <div className="mb-6 bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+          <div className="p-6 border-b border-white/10">
+            <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
+              <Sparkles className="w-5 h-5 text-amber-400" />
               {appointment.tenant.name}
-            </CardTitle>
-            <CardDescription>Termindetails</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </h2>
+            <p className="text-white/50 mt-1">Termindetails</p>
+          </div>
+          <div className="p-6 space-y-4">
             <div className="grid gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-primary" />
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <p className="font-medium">{appointment.service.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-white">{appointment.service.name}</p>
+                  <p className="text-sm text-white/50">
                     {appointment.service.duration_minutes} Minuten
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-primary" />
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <p className="font-medium">{formattedDate}</p>
-                  <p className="text-sm text-muted-foreground">Datum</p>
+                  <p className="font-medium text-white">{formattedDate}</p>
+                  <p className="text-sm text-white/50">Datum</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-primary" />
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <p className="font-medium">{formattedTime} Uhr</p>
-                  <p className="text-sm text-muted-foreground">Uhrzeit</p>
+                  <p className="font-medium text-white">{formattedTime} Uhr</p>
+                  <p className="text-sm text-white/50">Uhrzeit</p>
                 </div>
               </div>
 
               {appointment.employee && (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <User className="w-5 h-5 text-amber-400" />
                   </div>
                   <div>
-                    <p className="font-medium">
+                    <p className="font-medium text-white">
                       {appointment.employee.first_name} {appointment.employee.last_name}
                     </p>
-                    <p className="text-sm text-muted-foreground">Mitarbeiter</p>
+                    <p className="text-sm text-white/50">Mitarbeiter</p>
                   </div>
                 </div>
               )}
 
               {(appointment.tenant.address || appointment.tenant.city) && (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-amber-400" />
                   </div>
                   <div>
-                    <p className="font-medium">
+                    <p className="font-medium text-white">
                       {[appointment.tenant.address, appointment.tenant.city]
                         .filter(Boolean)
                         .join(', ')}
                     </p>
-                    <p className="text-sm text-muted-foreground">Adresse</p>
+                    <p className="text-sm text-white/50">Adresse</p>
                   </div>
                 </div>
               )}
             </div>
 
             {appointment.customer_notes && (
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground">Deine Anmerkungen:</p>
-                <p className="text-sm mt-1">{appointment.customer_notes}</p>
+              <div className="pt-4 border-t border-white/10">
+                <p className="text-sm text-white/50">Deine Anmerkungen:</p>
+                <p className="text-sm text-white mt-1">{appointment.customer_notes}</p>
               </div>
             )}
 
-            <div className="pt-4 border-t">
+            <div className="pt-4 border-t border-white/10">
               <div className="flex justify-between items-center">
-                <span className="font-medium">Preis</span>
-                <span className="text-xl font-bold text-primary">
+                <span className="font-medium text-white">Preis</span>
+                <span className="text-xl font-bold text-amber-400">
                   {new Intl.NumberFormat('de-DE', {
                     style: 'currency',
                     currency: 'EUR',
@@ -170,26 +168,26 @@ export default async function BookingSuccessPage({
                 </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Confirmation Notice */}
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <CardHeader>
-            <CardTitle className="text-amber-800 text-lg">
+        <div className="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl overflow-hidden">
+          <div className="p-6 border-b border-amber-500/20">
+            <h2 className="text-amber-400 text-lg font-semibold">
               Bitte bestätige deinen Termin
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-amber-700 text-sm">
+            </h2>
+          </div>
+          <div className="p-6 space-y-4">
+            <p className="text-amber-300/80 text-sm">
               Um deinen Termin verbindlich zu buchen, klicke bitte auf den Bestätigungslink:
             </p>
 
             <div className="space-y-3">
               {/* Email confirmation */}
               {appointment.customer.email && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-amber-600" />
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <Mail className="w-4 h-4 text-amber-400" />
                   <span>Bestätigung an {appointment.customer.email} gesendet</span>
                 </div>
               )}
@@ -200,7 +198,7 @@ export default async function BookingSuccessPage({
                   href={clinicWhatsAppLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-green-600 hover:text-green-700"
+                  className="flex items-center gap-2 text-sm text-green-400 hover:text-green-300"
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span>Per WhatsApp bestätigen</span>
@@ -209,29 +207,29 @@ export default async function BookingSuccessPage({
 
               {/* Direct confirmation link */}
               <Link href={`/confirm/${token}`}>
-                <Button className="w-full mt-2">
-                  <CheckCircle className="w-4 h-4 mr-2" />
+                <button className="w-full mt-2 flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg transition-colors">
+                  <CheckCircle className="w-4 h-4" />
                   Termin jetzt bestätigen
-                </Button>
+                </button>
               </Link>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Contact Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Kontakt</CardTitle>
-            <CardDescription>Bei Fragen oder Änderungswünschen</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+          <div className="p-6 border-b border-white/10">
+            <h2 className="text-lg font-semibold text-white">Kontakt</h2>
+            <p className="text-white/50 mt-1">Bei Fragen oder Änderungswünschen</p>
+          </div>
+          <div className="p-6 space-y-3">
             {appointment.tenant.contact_phone && (
               <a
                 href={`tel:${appointment.tenant.contact_phone}`}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
               >
-                <Phone className="w-5 h-5 text-primary" />
-                <span>{appointment.tenant.contact_phone}</span>
+                <Phone className="w-5 h-5 text-amber-400" />
+                <span className="text-white">{appointment.tenant.contact_phone}</span>
               </a>
             )}
 
@@ -240,27 +238,27 @@ export default async function BookingSuccessPage({
                 href={clinicWhatsAppLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
               >
-                <MessageCircle className="w-5 h-5 text-green-600" />
-                <span>WhatsApp Nachricht senden</span>
+                <MessageCircle className="w-5 h-5 text-green-400" />
+                <span className="text-white">WhatsApp Nachricht senden</span>
               </a>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Back Link */}
         <div className="text-center mt-8">
           <Link
             href={`/book/${slug}`}
-            className="text-primary hover:underline text-sm"
+            className="text-amber-400 hover:text-amber-300 text-sm transition-colors"
           >
             Weiteren Termin buchen
           </Link>
         </div>
 
         {/* Footer */}
-        <footer className="text-center mt-8 text-sm text-muted-foreground">
+        <footer className="text-center mt-8 text-sm text-white/40">
           <p>Powered by Esylana</p>
         </footer>
       </div>

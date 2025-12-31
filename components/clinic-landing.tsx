@@ -10,12 +10,14 @@ import {
   Phone,
   Star,
   ChevronRight,
+  ChevronDown,
   Instagram,
   Facebook,
   Mail,
   Sparkles,
   Award,
-  Heart
+  Heart,
+  Users
 } from 'lucide-react'
 
 interface Service {
@@ -61,7 +63,7 @@ interface ClinicLandingProps {
 
 export function ClinicLanding({ tenant, services, employees, locations }: ClinicLandingProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
   const primaryLocation = locations[0]
   const bookingUrl = `/book/${tenant.slug}`
 
@@ -70,10 +72,14 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
     new Set(services.map(s => s.category).filter((c): c is string => c !== null && c !== ''))
   ).sort()
 
-  // Filter services based on selected category
-  const filteredServices = selectedCategory
-    ? services.filter(s => s.category === selectedCategory)
-    : services
+  // Group services by category
+  const servicesByCategory = categories.reduce((acc, category) => {
+    acc[category] = services.filter(s => s.category === category)
+    return acc
+  }, {} as Record<string, Service[]>)
+
+  // Services without category
+  const uncategorizedServices = services.filter(s => !s.category || s.category === '')
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
@@ -237,84 +243,130 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
         </div>
       </section>
 
-      {/* Services Section */}
+      {/* Services Section - Accordion Style */}
       <section id="services" className="py-32 bg-gradient-to-b from-[#0a0a0a] via-[#111] to-[#0a0a0a]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
             <span className="text-amber-400 tracking-[0.3em] uppercase text-sm">Unsere Leistungen</span>
             <h2 className="text-4xl md:text-5xl font-extralight mt-4 tracking-wide">
               Exklusive Behandlungen
             </h2>
             <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mt-8" />
+            <p className="text-white/50 mt-6">Wählen Sie eine Kategorie</p>
           </div>
 
-          {/* Category Tabs */}
-          {categories.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-3 mb-16">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`px-6 py-3 rounded-full text-sm tracking-[0.15em] uppercase transition-all duration-300 ${
-                  selectedCategory === null
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium'
-                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                }`}
-              >
-                Alle
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-6 py-3 rounded-full text-sm tracking-[0.15em] uppercase transition-all duration-300 ${
-                    selectedCategory === category
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black font-medium'
-                      : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredServices.map((service, index) => (
+          {/* Category Accordions */}
+          <div className="space-y-4">
+            {categories.map((category) => (
               <div
-                key={service.id}
-                className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-amber-500/50 transition-all duration-500 hover:transform hover:scale-105"
+                key={category}
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center mb-6">
-                    <Sparkles className="w-6 h-6 text-amber-400" />
-                  </div>
-
-                  <h3 className="text-xl font-light tracking-wide mb-3">{service.name}</h3>
-
-                  {service.description && (
-                    <p className="text-white/50 text-sm mb-6 line-clamp-2">{service.description}</p>
-                  )}
-
-                  <div className="flex items-center justify-between pt-6 border-t border-white/10">
-                    <div className="flex items-center gap-2 text-white/50 text-sm">
-                      <Clock className="w-4 h-4" />
-                      {service.duration_minutes} Min
+                {/* Category Header - Clickable */}
+                <button
+                  onClick={() => setExpandedCategory(expandedCategory === category ? null : category)}
+                  className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-amber-400" />
                     </div>
-                    <div className="text-amber-400 font-light text-xl">
-                      {service.price > 0 ? `€${service.price}` : 'Auf Anfrage'}
+                    <div className="text-left">
+                      <h3 className="text-xl font-light tracking-wide">{category}</h3>
+                      <p className="text-white/50 text-sm">{servicesByCategory[category].length} Behandlungen</p>
                     </div>
                   </div>
-                </div>
+                  <ChevronDown className={`w-6 h-6 text-amber-400 transition-transform duration-300 ${expandedCategory === category ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Services List - Expandable */}
+                {expandedCategory === category && (
+                  <div className="border-t border-white/10">
+                    {servicesByCategory[category].map((service) => (
+                      <div
+                        key={service.id}
+                        className="px-8 py-5 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-light tracking-wide">{service.name}</h4>
+                            {service.description && (
+                              <p className="text-white/40 text-sm mt-1 line-clamp-1">{service.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-6 ml-4">
+                            <div className="flex items-center gap-2 text-white/50 text-sm">
+                              <Clock className="w-4 h-4" />
+                              {service.duration_minutes} Min
+                            </div>
+                            <div className="text-amber-400 font-light text-lg min-w-[80px] text-right">
+                              {service.price > 0 ? `€${service.price}` : 'Anfrage'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+
+            {/* Uncategorized Services */}
+            {uncategorizedServices.length > 0 && (
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
+                <button
+                  onClick={() => setExpandedCategory(expandedCategory === '_other' ? null : '_other')}
+                  className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-xl font-light tracking-wide">Weitere Behandlungen</h3>
+                      <p className="text-white/50 text-sm">{uncategorizedServices.length} Behandlungen</p>
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-6 h-6 text-amber-400 transition-transform duration-300 ${expandedCategory === '_other' ? 'rotate-180' : ''}`} />
+                </button>
+
+                {expandedCategory === '_other' && (
+                  <div className="border-t border-white/10">
+                    {uncategorizedServices.map((service) => (
+                      <div
+                        key={service.id}
+                        className="px-8 py-5 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-light tracking-wide">{service.name}</h4>
+                            {service.description && (
+                              <p className="text-white/40 text-sm mt-1 line-clamp-1">{service.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-6 ml-4">
+                            <div className="flex items-center gap-2 text-white/50 text-sm">
+                              <Clock className="w-4 h-4" />
+                              {service.duration_minutes} Min
+                            </div>
+                            <div className="text-amber-400 font-light text-lg min-w-[80px] text-right">
+                              {service.price > 0 ? `€${service.price}` : 'Anfrage'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="text-center mt-16">
             <Link href={bookingUrl}>
               <Button size="lg" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-medium tracking-wider uppercase px-10">
-                Alle Behandlungen & Buchen
-                <ChevronRight className="w-5 h-5 ml-2" />
+                <Calendar className="w-5 h-5 mr-2" />
+                Jetzt Termin buchen
               </Button>
             </Link>
           </div>
