@@ -82,7 +82,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
   const uncategorizedServices = services.filter(s => !s.category || s.category === '')
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden scroll-smooth">
       {/* Elegant Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -192,7 +192,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-32 relative">
+      <section id="about" className="py-32 relative scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -244,7 +244,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
       </section>
 
       {/* Services Section - Accordion Style */}
-      <section id="services" className="py-32 bg-gradient-to-b from-[#0a0a0a] via-[#111] to-[#0a0a0a]">
+      <section id="services" className="py-32 bg-gradient-to-b from-[#0a0a0a] via-[#111] to-[#0a0a0a] scroll-mt-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
             <span className="text-amber-400 tracking-[0.3em] uppercase text-sm">Unsere Leistungen</span>
@@ -395,7 +395,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
 
       {/* Team Section */}
       {employees.length > 0 && (
-        <section id="team" className="py-32">
+        <section id="team" className="py-32 scroll-mt-24">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-20">
               <span className="text-amber-400 tracking-[0.3em] uppercase text-sm">Unser Team</span>
@@ -446,7 +446,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
       )}
 
       {/* Contact Section */}
-      <section id="contact" className="py-32 bg-gradient-to-b from-[#0a0a0a] to-[#111]">
+      <section id="contact" className="py-32 bg-gradient-to-b from-[#0a0a0a] to-[#111] scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16">
             <div>
