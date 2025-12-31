@@ -95,7 +95,7 @@ export async function getTenantWithDetails(tenantId: string): Promise<{
 
     const [
       { data: services },
-      { data: employees },
+      { data: employeesRaw },
       { data: locations }
     ] = await Promise.all([
       adminClient
@@ -106,10 +106,10 @@ export async function getTenantWithDetails(tenantId: string): Promise<{
         .order('name'),
       adminClient
         .from('employees')
-        .select('*')
+        .select('id, first_name, last_name, role, profile_image_url, bio')
         .eq('tenant_id', tenantId)
         .eq('is_active', true)
-        .order('name'),
+        .order('first_name'),
       adminClient
         .from('locations')
         .select('*')
@@ -117,9 +117,19 @@ export async function getTenantWithDetails(tenantId: string): Promise<{
         .order('is_primary', { ascending: false })
     ])
 
+    // Transform employees to include 'name' field
+    const employees = (employeesRaw || []).map((emp: { id: string; first_name: string; last_name: string; role: string | null; profile_image_url: string | null; bio: string | null }) => ({
+      id: emp.id,
+      name: `${emp.first_name} ${emp.last_name}`,
+      role: emp.role,
+      avatar_url: null,
+      profile_image_url: emp.profile_image_url,
+      bio: emp.bio,
+    }))
+
     return {
       services: services || [],
-      employees: employees || [],
+      employees,
       locations: locations || [],
       error: null
     }
