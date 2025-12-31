@@ -436,6 +436,51 @@ Wenn keine spezifischen Klinik-Informationen verfügbar sind, stelle dich als Es
     const hasAppointmentContext = reply.toLowerCase().includes('termin') || reply.toLowerCase().includes('buchung')
     const quickReplies = generateQuickReplies(lastUserMessage, reply, services, hasAppointmentContext)
 
+    // Emit event for n8n automation (non-blocking)
+    if (tenantSlug && (intent === 'booking' || intent === 'consultation' || intent === 'complaint')) {
+      try {
+        const adminClient = createAdminClient()
+        const { data: eventTenant } = await adminClient
+          .from('tenants')
+          .select('id')
+          .ilike('slug', `${tenantSlug}%`)
+          .limit(1)
+          .single()
+
+        if (eventTenant) {
+          // Store event for n8n processing
+          await adminClient
+            .from('chat_events' as never)
+            .insert({
+              tenant_id: (eventTenant as { id: string }).id,
+              event_type: intent === 'booking' ? 'booking_intent' : intent === 'consultation' ? 'consultation_request' : 'complaint',
+              user_message: lastUserMessage,
+              assistant_reply: reply,
+              intent,
+              metadata: { actionButtons, hasAppointmentContext },
+              processed: false,
+            } as never)
+
+          // Trigger n8n webhook if configured (fire and forget)
+          const n8nWebhookUrl = process.env.N8N_CHAT_WEBHOOK_URL
+          if (n8nWebhookUrl) {
+            fetch(n8nWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                event_type: intent,
+                tenant_id: (eventTenant as { id: string }).id,
+                user_message: lastUserMessage,
+                timestamp: new Date().toISOString()
+              })
+            }).catch(() => {})
+          }
+        }
+      } catch (eventError) {
+        console.log('Chat event emission skipped:', eventError)
+      }
+    }
+
     return NextResponse.json({
       reply,
       quickReplies,
