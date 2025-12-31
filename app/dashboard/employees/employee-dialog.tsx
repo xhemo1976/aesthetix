@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { createEmployee, updateEmployee, uploadEmployeeImage, deleteEmployeeImage, type Employee } from '@/lib/actions/employees'
 import { Plus, Upload, X, User, Loader2 } from 'lucide-react'
+import imageCompression from 'browser-image-compression'
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const DAY_NAMES = {
@@ -52,19 +53,35 @@ export function EmployeeDialog({ employee, services }: { employee?: Employee; se
 
     setUploadingImage(true)
 
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const result = await uploadEmployeeImage(formData)
-
-    if (result.error) {
-      alert('Fehler beim Hochladen: ' + result.error)
-    } else if (result.url) {
-      // Delete old image if exists
-      if (profileImageUrl) {
-        await deleteEmployeeImage(profileImageUrl)
+    try {
+      // Compress image automatically
+      const options = {
+        maxSizeMB: 0.5, // Max 500KB
+        maxWidthOrHeight: 800, // Max 800px
+        useWebWorker: true,
       }
-      setProfileImageUrl(result.url)
+
+      const compressedFile = await imageCompression(file, options)
+      console.log('Original:', (file.size / 1024).toFixed(0), 'KB')
+      console.log('Komprimiert:', (compressedFile.size / 1024).toFixed(0), 'KB')
+
+      const formData = new FormData()
+      formData.append('file', compressedFile)
+
+      const result = await uploadEmployeeImage(formData)
+
+      if (result.error) {
+        alert('Fehler beim Hochladen: ' + result.error)
+      } else if (result.url) {
+        // Delete old image if exists
+        if (profileImageUrl) {
+          await deleteEmployeeImage(profileImageUrl)
+        }
+        setProfileImageUrl(result.url)
+      }
+    } catch (err) {
+      console.error('Compression error:', err)
+      alert('Fehler bei der Bildverarbeitung')
     }
 
     setUploadingImage(false)
