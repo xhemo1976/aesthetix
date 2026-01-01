@@ -2,12 +2,13 @@
 
 ## Überblick
 
-**Esylana** ist eine SaaS-Plattform für Schönheitskliniken und Ästhetik-Praxen.
+**Esylana** ist eine Multi-Branchen SaaS-Plattform für Dienstleister.
 - Multi-Tenant Architektur
-- Online-Terminbuchung mit Subdomain-Support
-- Luxus-Landingpages für Kunden-Kliniken (Dark Theme)
-- Kunden-Login System (Email/Passwort)
-- KI-Chatbot für Kundenanfragen
+- **Multi-Branchen:** Kliniken, Gastronomie, Friseure, Spätkauf
+- Online-Terminbuchung / Tischreservierung mit Subdomain-Support
+- Luxus-Landingpages (Dark Theme)
+- KI-Chatbot mit branchenspezifischen Prompts
+- WhatsApp-Integration für Buchungen
 
 **Repository:** github.com/xhemo1976/aesthetix
 
@@ -19,7 +20,19 @@
 - **Hosting:** Hostinger VPS (KVM 4)
 - **Process Manager:** PM2
 - **Reverse Proxy:** Traefik (mit Let's Encrypt SSL)
+- **KI:** OpenAI GPT-4o-mini für Chat
 - **Image Compression:** browser-image-compression (Client-side)
+
+## Branchen-Support
+
+| Branche | business_type | Demo-URL | Dashboard-Labels |
+|---------|---------------|----------|------------------|
+| Schönheitsklinik | `beauty_clinic` | demo.esylana.de | Behandlungen, Termine, Kunden |
+| Restaurant | `gastronomy` | gastro.esylana.de | Speisekarte, Reservierungen, Gäste |
+| Friseur | `hairdresser` | - | Leistungen, Termine, Kunden |
+| Spätkauf | `late_shop` | - | Produkte, Bestellungen, Kunden |
+
+**Konfiguration:** `lib/config/business-types.ts`
 
 ## Projekt-Struktur
 
@@ -28,7 +41,9 @@
   /api
     /auth               - Staff Login/Signup/Logout
     /customer/auth      - Kunden Login/Signup
-    /chat               - KI-Chat Endpoint
+    /chat               - KI-Chat Endpoint (branchenspezifisch)
+    /chat/booking       - Chat-Buchungs-API (Services, Slots, Create)
+    /chat/events        - n8n Webhook Events
     /debug              - Supabase Connection Test
   /book/[slug]          - Öffentliche Buchungsseite (Dark Theme)
     /success            - Buchungsbestätigung
@@ -41,32 +56,35 @@
     /login              - Kunden-Login
     /signup             - Kunden-Registrierung
     /termine            - "Meine Termine" für Kunden
-  /dashboard            - Admin Dashboard (Multi-Tenant)
-    /employees          - Mitarbeiterverwaltung (mit Profilbildern)
-    /services           - Behandlungen
-    /customers          - Kundenverwaltung
-    /appointments       - Termine
+  /dashboard            - Admin Dashboard (Multi-Tenant, dynamische Labels)
+    /employees          - Mitarbeiterverwaltung
+    /services           - Behandlungen/Speisekarte/Leistungen
+    /customers          - Kunden/Gäste
+    /appointments       - Termine/Reservierungen
     /calendar           - Kalenderansicht
     /analytics          - Statistiken
     /locations          - Standorte
-    /packages           - Behandlungspakete
+    /packages           - Pakete/Menüs
     /reminders          - Erinnerungen
     /waitlist           - Warteliste
     /settings           - Einstellungen
-  /team/[slug]          - Öffentliche Team-Seite (optional)
+  /team/[slug]          - Öffentliche Team-Seite
   /login, /signup       - Staff Auth Seiten
-  page.tsx              - Landing (SaaS oder Klinik je nach Subdomain)
+  page.tsx              - Landing (SaaS oder Tenant je nach Subdomain)
 
 /components
-  clinic-landing.tsx    - Luxus-Landingpage (Dark Theme, Accordion Services)
-  chat-widget.tsx       - KI-Chatbot
+  business-landing.tsx  - Universal-Landingpage (alle Branchen)
+  clinic-landing.tsx    - Legacy (wird durch business-landing ersetzt)
+  chat-widget.tsx       - KI-Chatbot mit Booking-Flow + WhatsApp
   /ui                   - shadcn/ui Komponenten
 
 /lib
+  /config
+    business-types.ts   - Branchen-Konfiguration (Labels, Prompts, Bilder)
   /actions
     tenant-domain.ts    - Subdomain → Tenant Mapping
-    services.ts         - CRUD für Behandlungen
-    employees.ts        - CRUD + Bild-Upload für Mitarbeiter
+    services.ts         - CRUD für Services
+    employees.ts        - CRUD + Bild-Upload
     public-booking.ts   - Buchungs-Logik
     customers.ts        - Kundenverwaltung
     locations.ts        - Standorte
@@ -80,8 +98,9 @@
     whatsapp.ts         - WhatsApp Link Generator
 
 /scripts
-  seed-demo-services.ts           - Demo-Behandlungen
-  add-employee-profile-fields.sql - DB Migration für Mitarbeiterbilder
+  seed-demo-services.ts     - Demo-Klinik Behandlungen
+  seed-demo-gastro.ts       - Demo-Restaurant Speisekarte
+  create-gastro-admin.ts    - Admin-User für Gastro
 ```
 
 ## Domains & Subdomains
@@ -90,9 +109,10 @@
 |--------|-------|
 | esylana.de | SaaS Landing Page |
 | esylana.de/dashboard | Admin Dashboard |
-| esylana.de/book/[slug] | Buchungsseite (Dark Theme) |
-| demo.esylana.de | Demo-Klinik Kundenwebsite |
-| [kunde].esylana.de | Kunden-Klinik Website |
+| esylana.de/book/[slug] | Buchungsseite |
+| demo.esylana.de | Demo-Klinik |
+| gastro.esylana.de | Demo-Restaurant |
+| [kunde].esylana.de | Kunden-Website |
 
 **Subdomain-Erkennung:** `app/page.tsx` prüft Host-Header
 **Mapping:** `lib/actions/tenant-domain.ts`
@@ -123,7 +143,34 @@ pm2 status
 /var/www/esylana/              # App
 /var/www/esylana/.env.local    # Env Vars
 /root/docker-compose.yml       # Traefik + n8n
-/etc/traefik/dynamic/          # Routing Configs
+/etc/traefik/dynamic/          # Routing Configs (je Subdomain eine .yml)
+```
+
+### Traefik - Neue Subdomain hinzufügen
+```bash
+# 1. DNS bei Hostinger: A-Record für subdomain → 72.60.36.113
+# 2. Traefik Config erstellen:
+nano /etc/traefik/dynamic/[subdomain].yml
+
+# Inhalt:
+http:
+    routers:
+      [subdomain]:
+        rule: "Host(`[subdomain].esylana.de`)"
+        entryPoints:
+          - web
+          - websecure
+        service: esylana
+        tls:
+          certResolver: mytlschallenge
+    services:
+      [subdomain]:
+        loadBalancer:
+          servers:
+            - url: "http://172.17.0.1:3000"
+
+# 3. Traefik neustarten:
+docker restart root-traefik-1
 ```
 
 ### Dienste
@@ -131,7 +178,7 @@ pm2 status
 |--------|------|---------|
 | Esylana | 3000 | PM2 |
 | n8n | 5678 | Docker |
-| Traefik | 80, 443 | Docker |
+| Traefik | 80, 443 | Docker (root-traefik-1) |
 
 ## Supabase
 
@@ -140,14 +187,14 @@ pm2 status
 ### Wichtige Tabellen
 | Tabelle | Beschreibung |
 |---------|--------------|
-| `tenants` | Kliniken/Kunden |
+| `tenants` | Kliniken/Restaurants (mit `business_type`!) |
 | `users` | Staff/Admin Accounts |
-| `customers` | Endkunden der Kliniken (mit Auth) |
-| `services` | Behandlungen (mit `category`!) |
-| `appointments` | Termine |
-| `employees` | Mitarbeiter (mit `profile_image_url`, `bio`) |
-| `locations` | Standorte |
-| `packages` | Behandlungs-Pakete |
+| `customers` | Endkunden der Tenants |
+| `services` | Behandlungen/Gerichte (mit `category`) |
+| `appointments` | Termine/Reservierungen |
+| `employees` | Mitarbeiter/Personal |
+| `locations` | Standorte (mit `slug`!) |
+| `packages` | Pakete/Menüs |
 | `waitlist` | Warteliste-Einträge |
 
 ### Storage Buckets
@@ -161,27 +208,55 @@ pm2 status
 
 ### Fertig ✅
 - Multi-Tenant Dashboard
+- **Multi-Branchen-Support** (Klinik, Gastro, Friseur, Spätkauf)
 - Online-Terminbuchung (Dark Luxury Theme)
-- Subdomain-basierte Klinik-Landingpages
-- Luxus-Design Template (dark theme #0a0a0a, amber accents)
-- Kategorie-Filter für Behandlungen (Accordion auf Landing)
+- Subdomain-basierte Landingpages
+- **Chat-Widget mit Booking-Flow** (Service → Datum → Zeit → Kontakt)
+- **WhatsApp-Integration** (Buchungsanfrage per WhatsApp)
+- Branchenspezifische KI-Chat-Prompts
+- Dynamische Dashboard-Labels je Branche
+- Kategorie-Filter (Accordion)
 - Warteliste-System
 - Email-Bestätigungen
-- Mitarbeiter-Verwaltung mit Profilbildern
-- Automatische Bildkomprimierung (max 500KB, 800px)
+- Mitarbeiter mit Profilbildern
 - Standort-Verwaltung
-- Demo-Klinik mit 34 Behandlungen (3 Kategorien)
-- Kunden-Login (Email/Passwort für Endkunden)
-- "Meine Termine" Seite für eingeloggte Kunden
-- Team-Sektion auf Landing Page mit Scroll-Navigation
+- Kunden-Login + "Meine Termine"
+- Mehrsprachiger Chat (DE/EN/TR/RU)
+
+### Demo-Tenants
+| Tenant | Login | Passwort |
+|--------|-------|----------|
+| Demo-Klinik | demo@esylana.de | - |
+| Ristorante Milano | gastro@esylana.de | Gastro2025! |
 
 ### Geplant 📋
-- Warenkorb (mehrere Behandlungen buchen)
+- Warenkorb (mehrere Behandlungen)
 - Online-Zahlung (Stripe)
-- Embeddable Booking Widget (JavaScript)
-- Custom Domain Support pro Tenant
+- Embeddable Booking Widget
+- Custom Domain Support
 - Gutschein-System
 - SMS/WhatsApp Erinnerungen
+
+## Chat-Widget Features
+
+### Booking-Flow im Chat
+1. "Direkt Termin buchen" Button
+2. Service-Auswahl (nach Kategorien gruppiert)
+3. Datum-Auswahl (nächste 14 Tage, ohne Sonntag)
+4. Zeit-Auswahl (basierend auf Verfügbarkeit)
+5. Kontaktdaten-Formular
+6. Bestätigung + Buchung
+
+### WhatsApp-Integration
+- "Lieber per WhatsApp buchen?" Link während Booking-Flow
+- Vorgefertigte Nachricht mit allen Buchungsdetails
+- Benötigt `whatsapp_number` in tenants-Tabelle
+
+### Branchenspezifische Prompts
+- **Klinik:** Beauty-Beratung, Behandlungsempfehlungen
+- **Gastro:** Restaurant-Host, Menü-Empfehlungen, Allergien
+- **Friseur:** Styling-Beratung
+- **Spätkauf:** Produkt-Info, Bestellungen
 
 ## Häufige Befehle
 
@@ -192,14 +267,20 @@ npm run dev
 # Build testen
 npm run build
 
-# Demo-Services seeden
+# Demo-Klinik seeden
 npx tsx scripts/seed-demo-services.ts
+
+# Demo-Restaurant seeden
+npx tsx scripts/seed-demo-gastro.ts
+
+# Gastro-Admin erstellen
+npx tsx scripts/create-gastro-admin.ts
 
 # Git Workflow
 git add -A && git commit -m "message" && git push origin main
 
 # Deploy auf VPS
-ssh root@72.60.36.113 "cd /var/www/esylana && git pull && npm run build && cp .env.local .next/standalone/ && pm2 restart esylana"
+ssh root@72.60.36.113 "cd /var/www/esylana && git pull && npm install && npm run build && cp .env.local .next/standalone/ && pm2 restart esylana"
 ```
 
 ## Environment Variables
@@ -223,7 +304,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {
     serverActions: {
-      bodySizeLimit: '5mb',  // Für Bild-Uploads
+      bodySizeLimit: '5mb',
     },
   },
 }
@@ -240,8 +321,13 @@ const nextConfig: NextConfig = {
 ### SSL Zertifikat Fehler
 → AAAA Records bei Hostinger löschen, nur A Records
 
-### RLS Recursion Error
-→ Einfache Policies ohne Subqueries
+### Neue Subdomain zeigt 404
+→ Traefik Config fehlt! Siehe "Traefik - Neue Subdomain hinzufügen"
+
+### Traefik Container neustarten
+```bash
+docker restart root-traefik-1
+```
 
 ### Port 3000 belegt
 ```bash
@@ -249,91 +335,22 @@ pm2 delete all && pkill -f "node.*server.js"
 pm2 start npm --name "esylana" -- start && pm2 save
 ```
 
-### Bild-Upload "Body exceeded 1MB limit"
-→ `next.config.ts`: `serverActions.bodySizeLimit: '5mb'`
-→ Client-side Komprimierung mit `browser-image-compression`
-
-### useSearchParams Suspense Error
-→ Komponente in `<Suspense>` wrappen
-
 ### Server nicht aktualisiert
 ```bash
 git fetch origin && git reset --hard origin/main
 ```
 
-## Design System (Klinik-Landing & Booking)
+## Design System (Landing & Booking)
 
 ```
 Background:  #0a0a0a (fast schwarz)
 Cards:       bg-white/5, border-white/10
 Akzent:      amber-400 (text), amber-500 (buttons/active)
 Hover:       amber-500/50 (borders)
-Text:        white, white/70 (secondary), white/50 (muted), white/40 (hint)
+Text:        white, white/70 (secondary), white/50 (muted)
 Font:        Light weights, tracking-wide, uppercase für Labels
 Buttons:     bg-amber-500, text-black, hover:bg-amber-400
 ```
-
-### Booking Form Steps
-1. Service auswählen (Kategorie-Filter)
-2. Mitarbeiter auswählen (optional)
-3. Datum & Uhrzeit
-4. Kontaktdaten
-5. Bestätigung
-
-## Mitarbeiter-Bilder
-
-### Datenbank-Felder (employees)
-```sql
-profile_image_url TEXT,
-bio TEXT
-```
-
-### Storage Policy
-```sql
-CREATE POLICY "Public read" ON storage.objects FOR SELECT USING (bucket_id = 'employee-images');
-CREATE POLICY "Auth upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'employee-images');
-CREATE POLICY "Auth delete" ON storage.objects FOR DELETE USING (bucket_id = 'employee-images');
-```
-
-### Client-side Komprimierung
-```typescript
-import imageCompression from 'browser-image-compression'
-
-const options = {
-  maxSizeMB: 0.5,      // Max 500KB
-  maxWidthOrHeight: 800,
-  useWebWorker: true,
-}
-const compressedFile = await imageCompression(file, options)
-```
-
-## Kunden-Authentifizierung
-
-### Registrierung
-- `/customer/signup` → `/api/customer/auth/signup`
-- Erstellt Supabase Auth User
-- Erstellt `customers` Eintrag mit tenant_id
-- Redirect zu `/book/[slug]`
-
-### Login
-- `/customer/login` → `/api/customer/auth/login`
-- Prüft Email in `customers` Tabelle
-- Login mit Supabase Auth
-- Redirect zu `/book/[slug]`
-
-### Buchungsformular
-- Erkennt eingeloggten Kunden
-- Füllt Kontaktdaten automatisch aus
-- Zeigt "Meine Termine" Link
-
-## Demo-Klinik Behandlungen
-
-**Kategorien:** Ästhetik (15), Laser (8), Kosmetik (11)
-
-Beispiele:
-- Botox Stirn €250, Hyaluron Lippen €350
-- BBL Gesicht €350, Laser Haarentfernung €89-350
-- Signature Facial €129, Microneedling €199
 
 ## DNS bei Hostinger
 
@@ -342,5 +359,16 @@ Beispiele:
 | A | @ | 72.60.36.113 |
 | A | www | 72.60.36.113 |
 | A | demo | 72.60.36.113 |
+| A | gastro | 72.60.36.113 |
 
 **Keine AAAA Records!** (blockiert SSL)
+
+## Demo-Restaurant (Ristorante Milano)
+
+**Kategorien:** Vorspeisen (5), Hauptgerichte (8), Desserts (5), Getränke (6), Specials (3)
+
+Beispiele:
+- Bruschetta €8.90, Carpaccio €16.90
+- Wiener Schnitzel €26.90, Rinderfilet €38.90
+- Tiramisu €8.90, Panna Cotta €7.90
+- Degustationsmenü 5 Gänge €89.00
