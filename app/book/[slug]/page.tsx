@@ -103,7 +103,7 @@ export default async function PublicBookingPage({
           </footer>
         </div>
 
-        <ChatWidget tenantSlug={slug} tenantName={tenant.name} />
+        <ChatWidget tenantSlug={slug} tenantName={tenant.name} whatsappNumber={tenant.whatsapp_number || undefined} />
       </div>
     )
   }

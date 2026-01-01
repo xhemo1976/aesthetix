@@ -14,6 +14,7 @@ interface Tenant {
   slug: string
   logo_url: string | null
   business_type: string | null
+  whatsapp_number: string | null
 }
 
 export async function getTenantBySubdomain(subdomain: string): Promise<{ tenant: Tenant | null; error: string | null }> {

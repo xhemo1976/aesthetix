@@ -89,7 +89,7 @@ export default async function LocationBookingPage({
       </div>
 
       {/* Chat Widget with tenant context */}
-      <ChatWidget tenantSlug={slug} tenantName={tenant.name} />
+      <ChatWidget tenantSlug={slug} tenantName={tenant.name} whatsappNumber={tenant.whatsapp_number || undefined} />
     </div>
   )
 }

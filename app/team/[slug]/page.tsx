@@ -143,7 +143,7 @@ export default async function TeamPage({
       </div>
 
       {/* Chat Widget */}
-      <ChatWidget tenantSlug={slug} tenantName={tenant.name} />
+      <ChatWidget tenantSlug={slug} tenantName={tenant.name} whatsappNumber={tenant.whatsapp_number || undefined} />
     </div>
   )
 }

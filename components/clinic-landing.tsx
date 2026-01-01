@@ -53,6 +53,7 @@ interface Tenant {
   slug: string
   logo_url: string | null
   business_type: string | null
+  whatsapp_number: string | null
 }
 
 interface ClinicLandingProps {
@@ -570,7 +571,7 @@ export function ClinicLanding({ tenant, services, employees, locations }: Clinic
       </footer>
 
       {/* Chat Widget */}
-      <ChatWidget tenantSlug={tenant.slug} tenantName={tenant.name} />
+      <ChatWidget tenantSlug={tenant.slug} tenantName={tenant.name} whatsappNumber={tenant.whatsapp_number || undefined} />
     </div>
   )
 }
