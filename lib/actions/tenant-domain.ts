@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // Später kann das in der Datenbank gespeichert werden
 const SUBDOMAIN_MAPPING: Record<string, string> = {
   'demo': 'demo-klinik', // demo.esylana.de -> demo-klinik tenant
+  'gastro': 'demo-gastro', // gastro.esylana.de -> demo-gastro tenant
 }
 
 interface Tenant {

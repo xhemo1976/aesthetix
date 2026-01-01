@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, Users, Bot, Sparkles, TrendingUp, Shield } from "lucide-react"
 import { ChatWidget } from "@/components/chat-widget"
-import { ClinicLanding } from "@/components/clinic-landing"
+import { BusinessLanding } from "@/components/business-landing"
 import { getTenantBySubdomain, getTenantWithDetails } from "@/lib/actions/tenant-domain"
 
 // Main domains that should show the SaaS landing page
@@ -46,7 +46,7 @@ export default async function Home() {
       const { services, employees, locations } = await getTenantWithDetails(tenant.id)
 
       return (
-        <ClinicLanding
+        <BusinessLanding
           tenant={tenant}
           services={services}
           employees={employees}

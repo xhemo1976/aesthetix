@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { logout } from '@/lib/actions/auth'
-import { Calendar, Users, Sparkles, Settings, LogOut, LayoutDashboard, UserCircle, Bell, BarChart3, MapPin, Clock, Package } from 'lucide-react'
+import { Calendar, Users, Sparkles, Settings, LogOut, LayoutDashboard, UserCircle, Bell, BarChart3, MapPin, Clock, Package, UtensilsCrossed, Scissors } from 'lucide-react'
+import { getBusinessTypeConfig, type BusinessType } from '@/lib/config/business-types'
 
 export default async function DashboardLayout({
   children,
@@ -26,6 +27,24 @@ export default async function DashboardLayout({
     .eq('id', user.id)
     .single()
 
+  // Get business type config for dynamic labels
+  const businessType = profile?.tenants?.business_type as BusinessType | undefined
+  const config = getBusinessTypeConfig(businessType)
+
+  // Get icon based on business type
+  const getServiceIcon = () => {
+    switch (businessType) {
+      case 'gastronomy':
+      case 'late_shop':
+        return UtensilsCrossed
+      case 'hairdresser':
+        return Scissors
+      default:
+        return Sparkles
+    }
+  }
+  const ServiceIcon = getServiceIcon()
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -36,11 +55,18 @@ export default async function DashboardLayout({
               Esylana
             </h1>
           </Link>
-          {profile?.tenants && (
-            <p className="text-sm text-muted-foreground hidden md:block">
-              {profile.tenants.name}
-            </p>
-          )}
+          <div className="hidden md:flex items-center gap-3">
+            {profile?.tenants && (
+              <>
+                <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                  {config.name}
+                </span>
+                <p className="text-sm text-muted-foreground">
+                  {profile.tenants.name}
+                </p>
+              </>
+            )}
+          </div>
           <form action={logout}>
             <Button variant="outline" size="sm">
               <LogOut className="w-4 h-4 mr-2" />
@@ -63,29 +89,29 @@ export default async function DashboardLayout({
 
             <Link href="/dashboard/services">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
-                <Sparkles className="w-5 h-5" />
-                <span>Services</span>
+                <ServiceIcon className="w-5 h-5" />
+                <span>{config.labels.services}</span>
               </div>
             </Link>
 
             <Link href="/dashboard/packages">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                 <Package className="w-5 h-5" />
-                <span>Pakete</span>
+                <span>{config.labels.packages}</span>
               </div>
             </Link>
 
             <Link href="/dashboard/customers">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                 <Users className="w-5 h-5" />
-                <span>Kunden</span>
+                <span>{config.labels.customers}</span>
               </div>
             </Link>
 
             <Link href="/dashboard/employees">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                 <UserCircle className="w-5 h-5" />
-                <span>Mitarbeiter</span>
+                <span>{config.labels.employees}</span>
               </div>
             </Link>
 
@@ -99,7 +125,7 @@ export default async function DashboardLayout({
             <Link href="/dashboard/appointments">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                 <Calendar className="w-5 h-5" />
-                <span>Termine</span>
+                <span>{config.labels.appointments}</span>
               </div>
             </Link>
 
@@ -120,7 +146,7 @@ export default async function DashboardLayout({
             <Link href="/dashboard/waitlist">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                 <Clock className="w-5 h-5" />
-                <span>Warteliste</span>
+                <span>{config.labels.waitlist}</span>
               </div>
             </Link>
 
