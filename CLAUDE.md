@@ -74,7 +74,7 @@
 
 /components
   business-landing.tsx  - Universal-Landingpage (alle Branchen)
-  clinic-landing.tsx    - Legacy (wird durch business-landing ersetzt)
+  menu-card.tsx         - Moderne Speisekarte mit Bildern & Allergenen
   chat-widget.tsx       - KI-Chatbot mit Booking-Flow + WhatsApp
   /ui                   - shadcn/ui Komponenten
 
@@ -101,6 +101,8 @@
   seed-demo-services.ts     - Demo-Klinik Behandlungen
   seed-demo-gastro.ts       - Demo-Restaurant Speisekarte
   create-gastro-admin.ts    - Admin-User für Gastro
+  update-gastro-menu.ts     - Bilder & Allergene für Demo-Gerichte
+  add-menu-fields.sql       - DB-Migration für Gastro-Felder
 ```
 
 ## Domains & Subdomains
@@ -201,8 +203,24 @@ docker restart root-traefik-1
 | Bucket | Beschreibung |
 |--------|--------------|
 | `employee-images` | Mitarbeiter-Profilbilder (public) |
+| `dish-images` | Gerichte-Bilder für Gastro (public) |
 
 **RLS:** Aktiv - Service Role Key für Admin-Operationen
+
+### Services-Tabelle (erweitert für Gastro)
+```sql
+-- Basis-Felder
+id, tenant_id, name, description, category, price, duration_minutes, is_active
+
+-- Gastro-spezifische Felder
+image_url TEXT,              -- Bild-URL aus dish-images Bucket
+allergens TEXT[],            -- Array: ['gluten', 'lactose', 'eggs', ...]
+is_vegetarian BOOLEAN,
+is_vegan BOOLEAN,
+is_spicy BOOLEAN
+```
+
+**Allergen-Codes:** gluten, lactose, eggs, nuts, peanuts, soy, fish, shellfish, celery, mustard, sesame, sulfites
 
 ## Features Status
 
@@ -222,6 +240,8 @@ docker restart root-traefik-1
 - Standort-Verwaltung
 - Kunden-Login + "Meine Termine"
 - Mehrsprachiger Chat (DE/EN/TR/RU)
+- **Moderne Speisekarte** (MenuCard) mit Bildern, Allergenen, Diät-Icons
+- **Gastro-Dashboard** mit Bild-Upload, Allergen-Auswahl, Vegetarisch/Vegan/Scharf
 
 ### Demo-Tenants
 | Tenant | Login | Passwort |
@@ -230,6 +250,7 @@ docker restart root-traefik-1
 | Ristorante Milano | gastro@esylana.de | Gastro2025! |
 
 ### Geplant 📋
+- **Tischreservierung für Gastro** (Datum, Uhrzeit, Personenanzahl)
 - Warenkorb (mehrere Behandlungen)
 - Online-Zahlung (Stripe)
 - Embeddable Booking Widget
@@ -372,3 +393,30 @@ Beispiele:
 - Wiener Schnitzel €26.90, Rinderfilet €38.90
 - Tiramisu €8.90, Panna Cotta €7.90
 - Degustationsmenü 5 Gänge €89.00
+
+## Gastro-Speisekarte (MenuCard)
+
+### Features
+- Hochwertige Bilder pro Gericht (Unsplash oder eigene)
+- Allergen-Badges mit Icons und Farben
+- Vegetarisch/Vegan/Scharf Icons
+- Kategorien mit ausklappbaren Header-Bildern
+- Responsive Grid (1-4 Spalten)
+- Hover-Effekte und Animationen
+- Allergen-Legende am Anfang
+
+### Dashboard-Features (Gastro)
+- Bild-Upload mit Client-side Komprimierung (max 500KB)
+- Allergen-Checkboxen (12 Optionen)
+- Vegetarisch/Vegan/Scharf Toggle
+- Vorschau der Bilder in der Liste
+- Dynamische Labels (Gericht statt Behandlung)
+
+### Komponenten
+```
+components/menu-card.tsx          - Speisekarten-Anzeige auf Landing
+app/dashboard/services/
+  service-dialog.tsx              - Formular mit Gastro-Feldern
+  services-list.tsx               - Liste mit Bild-Vorschau
+  page.tsx                        - Lädt businessType für Labels
+```
