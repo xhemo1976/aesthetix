@@ -118,6 +118,15 @@ export async function createService(formData: FormData) {
     return { error: error.message }
   }
 
+  // If category image was set, update all services in the same category
+  if (category && category_image_url) {
+    await supabase
+      .from('services')
+      .update({ category_image_url })
+      .eq('tenant_id', profile.tenant_id)
+      .eq('category', category)
+  }
+
   revalidatePath('/dashboard/services')
   return { error: null }
 }
@@ -161,6 +170,24 @@ export async function updateService(id: string, formData: FormData) {
   if (error) {
     console.error('Error updating service:', error)
     return { error: error.message }
+  }
+
+  // If category image was set, update all services in the same category
+  if (category && category_image_url) {
+    // Get tenant_id from the service
+    const { data: service } = await supabase
+      .from('services')
+      .select('tenant_id')
+      .eq('id', id)
+      .single()
+
+    if (service) {
+      await supabase
+        .from('services')
+        .update({ category_image_url })
+        .eq('tenant_id', service.tenant_id)
+        .eq('category', category)
+    }
   }
 
   revalidatePath('/dashboard/services')
