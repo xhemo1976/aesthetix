@@ -38,6 +38,7 @@ interface MenuItem {
   description: string | null
   price: number
   image_url?: string | null
+  category_image_url?: string | null
   allergens?: string[] | null
   is_vegetarian?: boolean
   is_vegan?: boolean
@@ -166,7 +167,10 @@ function CategorySection({
   defaultExpanded?: boolean
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
-  const headerImage = CATEGORY_IMAGES[category] || CATEGORY_IMAGES['Hauptgerichte']
+
+  // Use category_image_url from the first item that has it, fallback to hardcoded defaults
+  const customCategoryImage = items.find(item => item.category_image_url)?.category_image_url
+  const headerImage = customCategoryImage || CATEGORY_IMAGES[category] || CATEGORY_IMAGES['Hauptgerichte']
 
   return (
     <div className="mb-12">
