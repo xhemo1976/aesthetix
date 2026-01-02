@@ -848,8 +848,43 @@ export async function createGastroReservation(formData: FormData): Promise<{
   // Generate confirmation token
   const confirmationToken = generateConfirmationToken()
 
-  // Create reservation as appointment (reusing appointments table)
-  // For gastro, we store guest_count in customer_notes or a separate field
+  // Find or create a "Tischreservierung" service for this tenant
+  let reservationServiceId: string
+
+  const { data: existingService } = await adminClient
+    .from('services')
+    .select('id')
+    .eq('tenant_id', tenant.id)
+    .eq('name', 'Tischreservierung')
+    .single() as { data: { id: string } | null }
+
+  if (existingService) {
+    reservationServiceId = existingService.id
+  } else {
+    // Create the reservation service
+    const { data: newService, error: serviceError } = await (adminClient
+      .from('services')
+      .insert({
+        tenant_id: tenant.id,
+        name: 'Tischreservierung',
+        description: 'Tischreservierung im Restaurant',
+        price: 0,
+        duration_minutes: 120, // 2 hours default
+        category: 'Reservierung',
+        is_active: true,
+      } as unknown as never)
+      .select('id')
+      .single() as unknown as Promise<{ data: { id: string } | null; error: Error | null }>)
+
+    if (serviceError || !newService) {
+      console.error('Error creating reservation service:', serviceError)
+      return { confirmationToken: null, reservationId: null, error: 'Fehler beim Erstellen der Reservierung' }
+    }
+
+    reservationServiceId = newService.id
+  }
+
+  // Create reservation as appointment
   const reservationNotes = `Reservierung für ${guestCount} ${guestCount === 1 ? 'Person' : 'Personen'}${notes ? `. Anmerkungen: ${notes}` : ''}`
 
   const { data: reservation, error: reservationError } = await (adminClient
@@ -857,12 +892,12 @@ export async function createGastroReservation(formData: FormData): Promise<{
     .insert({
       tenant_id: tenant.id,
       customer_id: customerId,
-      service_id: null, // No service for reservations
+      service_id: reservationServiceId,
       employee_id: null,
       location_id: locationId || null,
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
-      price: 0, // Reservations are free
+      price: 0,
       status: 'scheduled',
       customer_notes: reservationNotes,
       confirmation_token: confirmationToken,
