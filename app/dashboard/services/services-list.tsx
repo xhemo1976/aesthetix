@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Edit, Trash2, Clock, Euro } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Edit, Trash2, Clock, Euro, Leaf, Flame, AlertTriangle } from 'lucide-react'
 import { ServiceDialog } from './service-dialog'
 import { deleteService, toggleServiceStatus } from '@/lib/actions/services'
 
@@ -15,15 +17,62 @@ type Service = {
   price: number
   duration_minutes: number
   is_active: boolean
+  image_url?: string | null
+  allergens?: string[] | null
+  is_vegetarian?: boolean
+  is_vegan?: boolean
+  is_spicy?: boolean
 }
 
-export function ServicesList({ initialServices }: { initialServices: Service[] }) {
+type ServicesListProps = {
+  initialServices: Service[]
+  businessType?: string
+}
+
+// Allergen labels
+const ALLERGEN_LABELS: Record<string, string> = {
+  gluten: 'Gluten',
+  lactose: 'Laktose',
+  eggs: 'Eier',
+  nuts: 'Nüsse',
+  peanuts: 'Erdnüsse',
+  soy: 'Soja',
+  fish: 'Fisch',
+  shellfish: 'Schalentiere',
+  celery: 'Sellerie',
+  mustard: 'Senf',
+  sesame: 'Sesam',
+  sulfites: 'Sulfite',
+}
+
+export function ServicesList({ initialServices, businessType = 'beauty_clinic' }: ServicesListProps) {
   const [services, setServices] = useState(initialServices)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
 
+  const isGastronomy = businessType === 'gastronomy'
+
+  // Labels based on business type
+  const labels = isGastronomy
+    ? {
+        item: 'Gericht',
+        items: 'Gerichte',
+        newItem: 'Neues Gericht',
+        firstItem: 'Erstes Gericht erstellen',
+        noItems: 'Noch keine Gerichte angelegt',
+        deleteConfirm: 'Möchtest du dieses Gericht wirklich löschen?',
+      }
+    : {
+        item: 'Behandlung',
+        items: 'Behandlungen',
+        newItem: 'Neue Behandlung',
+        firstItem: 'Erste Behandlung erstellen',
+        noItems: 'Noch keine Behandlungen angelegt',
+        deleteConfirm: 'Möchtest du diese Behandlung wirklich löschen?',
+      }
+
   async function handleDelete(id: string) {
-    if (!confirm('Möchtest du diese Behandlung wirklich löschen?')) return
+    if (!confirm(labels.deleteConfirm)) return
 
     const result = await deleteService(id)
     if (!result.error) {
@@ -57,11 +106,11 @@ export function ServicesList({ initialServices }: { initialServices: Service[] }
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="text-sm text-muted-foreground">
-          {services.length} Behandlung{services.length !== 1 ? 'en' : ''}
+          {services.length} {services.length !== 1 ? labels.items : labels.item}
         </div>
         <Button onClick={handleCreate}>
           <Plus className="w-4 h-4 mr-2" />
-          Neue Behandlung
+          {labels.newItem}
         </Button>
       </div>
 
@@ -69,10 +118,10 @@ export function ServicesList({ initialServices }: { initialServices: Service[] }
         <Card>
           <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
-              <p className="mb-4">Noch keine Behandlungen angelegt</p>
+              <p className="mb-4">{labels.noItems}</p>
               <Button onClick={handleCreate}>
                 <Plus className="w-4 h-4 mr-2" />
-                Erste Behandlung erstellen
+                {labels.firstItem}
               </Button>
             </div>
           </CardContent>
@@ -81,7 +130,19 @@ export function ServicesList({ initialServices }: { initialServices: Service[] }
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {services.map((service) => (
             <Card key={service.id} className={!service.is_active ? 'opacity-60' : ''}>
-              <CardHeader>
+              {/* Image for Gastronomy */}
+              {isGastronomy && service.image_url && (
+                <div className="relative h-32 w-full">
+                  <Image
+                    src={service.image_url}
+                    alt={service.name}
+                    fill
+                    className="object-cover rounded-t-lg"
+                  />
+                </div>
+              )}
+
+              <CardHeader className={isGastronomy && service.image_url ? 'pt-3' : ''}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg">{service.name}</CardTitle>
@@ -109,12 +170,50 @@ export function ServicesList({ initialServices }: { initialServices: Service[] }
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent>
                 {service.description && (
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                     {service.description}
                   </p>
                 )}
+
+                {/* Diet badges for Gastronomy */}
+                {isGastronomy && (service.is_vegetarian || service.is_vegan || service.is_spicy) && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {service.is_vegan && (
+                      <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-600">
+                        <Leaf className="w-3 h-3 mr-1" />
+                        Vegan
+                      </Badge>
+                    )}
+                    {service.is_vegetarian && !service.is_vegan && (
+                      <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600">
+                        <Leaf className="w-3 h-3 mr-1" />
+                        Vegetarisch
+                      </Badge>
+                    )}
+                    {service.is_spicy && (
+                      <Badge variant="secondary" className="text-xs bg-red-500/10 text-red-600">
+                        <Flame className="w-3 h-3 mr-1" />
+                        Scharf
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
+                {/* Allergens for Gastronomy */}
+                {isGastronomy && service.allergens && service.allergens.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    <AlertTriangle className="w-3 h-3 text-amber-500 mr-1" />
+                    {service.allergens.map((allergen) => (
+                      <Badge key={allergen} variant="outline" className="text-xs">
+                        {ALLERGEN_LABELS[allergen] || allergen}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-1">
                     <Euro className="w-4 h-4" />
@@ -125,6 +224,7 @@ export function ServicesList({ initialServices }: { initialServices: Service[] }
                     <span>{service.duration_minutes} Min</span>
                   </div>
                 </div>
+
                 <Button
                   variant={service.is_active ? "outline" : "default"}
                   size="sm"
@@ -143,6 +243,7 @@ export function ServicesList({ initialServices }: { initialServices: Service[] }
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         service={editingService}
+        businessType={businessType}
       />
     </div>
   )

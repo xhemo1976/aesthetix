@@ -20,6 +20,38 @@ export async function getServices() {
   return { services, error: null }
 }
 
+export async function uploadServiceImage(file: File): Promise<{ url: string | null; error: string | null }> {
+  const supabase = await createClient()
+
+  // Generate unique filename
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+  const filePath = `dishes/${fileName}`
+
+  // Convert File to ArrayBuffer for upload
+  const arrayBuffer = await file.arrayBuffer()
+  const uint8Array = new Uint8Array(arrayBuffer)
+
+  const { error: uploadError } = await supabase.storage
+    .from('dish-images')
+    .upload(filePath, uint8Array, {
+      contentType: file.type,
+      cacheControl: '3600',
+    })
+
+  if (uploadError) {
+    console.error('Error uploading image:', uploadError)
+    return { url: null, error: uploadError.message }
+  }
+
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('dish-images')
+    .getPublicUrl(filePath)
+
+  return { url: publicUrl, error: null }
+}
+
 export async function createService(formData: FormData) {
   const supabase = await createClient()
   const adminClient = createAdminClient()
@@ -47,6 +79,14 @@ export async function createService(formData: FormData) {
   const price = parseFloat(formData.get('price') as string)
   const duration_minutes = parseInt(formData.get('duration_minutes') as string)
 
+  // New gastronomy fields
+  const image_url = formData.get('image_url') as string || null
+  const allergensJson = formData.get('allergens') as string
+  const allergens = allergensJson ? JSON.parse(allergensJson) : []
+  const is_vegetarian = formData.get('is_vegetarian') === 'true'
+  const is_vegan = formData.get('is_vegan') === 'true'
+  const is_spicy = formData.get('is_spicy') === 'true'
+
   const { error } = await supabase
     .from('services')
     .insert({
@@ -57,6 +97,11 @@ export async function createService(formData: FormData) {
       price,
       duration_minutes,
       is_active: true,
+      image_url: image_url || null,
+      allergens: allergens.length > 0 ? allergens : null,
+      is_vegetarian,
+      is_vegan,
+      is_spicy,
     })
 
   if (error) {
@@ -77,6 +122,14 @@ export async function updateService(id: string, formData: FormData) {
   const price = parseFloat(formData.get('price') as string)
   const duration_minutes = parseInt(formData.get('duration_minutes') as string)
 
+  // New gastronomy fields
+  const image_url = formData.get('image_url') as string || null
+  const allergensJson = formData.get('allergens') as string
+  const allergens = allergensJson ? JSON.parse(allergensJson) : []
+  const is_vegetarian = formData.get('is_vegetarian') === 'true'
+  const is_vegan = formData.get('is_vegan') === 'true'
+  const is_spicy = formData.get('is_spicy') === 'true'
+
   const { error } = await supabase
     .from('services')
     .update({
@@ -85,6 +138,11 @@ export async function updateService(id: string, formData: FormData) {
       category,
       price,
       duration_minutes,
+      image_url: image_url || null,
+      allergens: allergens.length > 0 ? allergens : null,
+      is_vegetarian,
+      is_vegan,
+      is_spicy,
     })
     .eq('id', id)
 
