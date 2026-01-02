@@ -86,14 +86,21 @@ type Service = {
   is_spicy?: boolean
 }
 
+type Category = {
+  id: string
+  name: string
+  image_url: string | null
+}
+
 type ServiceDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   service?: Service | null
   businessType?: string
+  categories?: Category[]
 }
 
-export function ServiceDialog({ open, onOpenChange, service, businessType = 'beauty_clinic' }: ServiceDialogProps) {
+export function ServiceDialog({ open, onOpenChange, service, businessType = 'beauty_clinic', categories = [] }: ServiceDialogProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -345,13 +352,30 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
 
           <div className="space-y-2">
             <Label htmlFor="category">{labels.category}</Label>
-            <Input
-              id="category"
-              name="category"
-              placeholder={labels.categoryPlaceholder}
-              defaultValue={service?.category || ''}
-              disabled={loading}
-            />
+            {isGastronomy && categories.length > 0 ? (
+              <select
+                id="category"
+                name="category"
+                defaultValue={service?.category || ''}
+                disabled={loading}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">-- Kategorie wählen --</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                id="category"
+                name="category"
+                placeholder={labels.categoryPlaceholder}
+                defaultValue={service?.category || ''}
+                disabled={loading}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

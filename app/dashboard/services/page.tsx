@@ -2,7 +2,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServices } from '@/lib/actions/services'
+import { getCategories } from '@/lib/actions/categories'
 import { ServicesList } from './services-list'
+import { CategoriesList } from './categories-list'
 import { getBusinessTypeConfig } from '@/lib/config/business-types'
 
 export default async function ServicesPage() {
@@ -38,21 +40,35 @@ export default async function ServicesPage() {
   }
 
   const config = getBusinessTypeConfig(businessType)
-  const { services } = await getServices()
+  const [{ services }, { categories }] = await Promise.all([
+    getServices(),
+    getCategories(),
+  ])
+
+  const isGastronomy = businessType === 'gastronomy'
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{config.labels.services}</h1>
         <p className="text-muted-foreground">
-          {businessType === 'gastronomy'
+          {isGastronomy
             ? 'Verwalte deine Speisekarte, Preise und Allergene'
             : 'Verwalte deine Behandlungen, Preise und Verfügbarkeit'
           }
         </p>
       </div>
 
-      <ServicesList initialServices={services || []} businessType={businessType} />
+      {/* Categories section - only for gastronomy */}
+      {isGastronomy && (
+        <CategoriesList initialCategories={categories || []} />
+      )}
+
+      <ServicesList
+        initialServices={services || []}
+        businessType={businessType}
+        categories={isGastronomy ? categories : undefined}
+      />
     </div>
   )
 }

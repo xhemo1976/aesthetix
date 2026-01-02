@@ -24,9 +24,16 @@ type Service = {
   is_spicy?: boolean
 }
 
+type Category = {
+  id: string
+  name: string
+  image_url: string | null
+}
+
 type ServicesListProps = {
   initialServices: Service[]
   businessType?: string
+  categories?: Category[]
 }
 
 // Allergen labels
@@ -45,7 +52,7 @@ const ALLERGEN_LABELS: Record<string, string> = {
   sulfites: 'Sulfite',
 }
 
-export function ServicesList({ initialServices, businessType = 'beauty_clinic' }: ServicesListProps) {
+export function ServicesList({ initialServices, businessType = 'beauty_clinic', categories = [] }: ServicesListProps) {
   const [services, setServices] = useState(initialServices)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
@@ -244,6 +251,7 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
         onOpenChange={handleDialogClose}
         service={editingService}
         businessType={businessType}
+        categories={categories}
       />
     </div>
   )
