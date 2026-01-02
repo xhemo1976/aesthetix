@@ -168,7 +168,9 @@ export default async function PublicBookingPage({
             </div>
           )}
           <h1 className="text-3xl font-bold text-white">{tenant.name}</h1>
-          <p className="text-white/60 mt-2">Online Terminbuchung</p>
+          <p className="text-white/60 mt-2">
+            {tenant.business_type === 'gastronomy' ? 'Tischreservierung' : 'Online Terminbuchung'}
+          </p>
           {primaryLocation && (primaryLocation.address || primaryLocation.city) && (
             <p className="text-sm text-white/40 mt-1">
               {primaryLocation.address}{primaryLocation.address && primaryLocation.city ? ', ' : ''}{primaryLocation.city}
@@ -183,6 +185,7 @@ export default async function PublicBookingPage({
           employees={employees || []}
           locationId={primaryLocation?.id}
           customerData={customerData}
+          businessType={tenant.business_type || 'beauty_clinic'}
         />
 
         {/* Footer */}

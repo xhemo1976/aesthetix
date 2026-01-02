@@ -663,3 +663,223 @@ export async function getPublicAppointmentByToken(token: string): Promise<{
 
   return { appointment: transformedAppointment, error: null }
 }
+
+/**
+ * Get available time slots for gastronomy reservations
+ * Simple time slots based on restaurant hours
+ */
+export async function getGastroSlots(params: {
+  tenantId: string
+  date: string
+  guestCount: number
+}): Promise<{
+  slots: string[]
+  error: string | null
+}> {
+  const { date } = params
+
+  // Get day of week
+  const dateObj = new Date(date)
+  const dayOfWeek = dateObj.getDay()
+
+  // Restaurant hours (can be customized per tenant later)
+  const restaurantHours: Record<number, { open: string; close: string } | null> = {
+    0: { open: '12:00', close: '22:00' }, // Sunday
+    1: { open: '11:00', close: '23:00' }, // Monday
+    2: { open: '11:00', close: '23:00' }, // Tuesday
+    3: { open: '11:00', close: '23:00' }, // Wednesday
+    4: { open: '11:00', close: '23:00' }, // Thursday
+    5: { open: '11:00', close: '24:00' }, // Friday
+    6: { open: '11:00', close: '24:00' }, // Saturday
+  }
+
+  const hours = restaurantHours[dayOfWeek]
+  if (!hours) {
+    return { slots: [], error: 'Heute geschlossen' }
+  }
+
+  // Generate 30-minute slots
+  const [openHour, openMinute] = hours.open.split(':').map(Number)
+  const [closeHour, closeMinute] = hours.close.split(':').map(Number)
+
+  const openMinutes = openHour * 60 + openMinute
+  const closeMinutes = (closeHour === 24 ? 24 * 60 : closeHour * 60 + closeMinute) - 60 // Last reservation 1 hour before closing
+
+  const slots: string[] = []
+
+  for (let time = openMinutes; time <= closeMinutes; time += 30) {
+    const hour = Math.floor(time / 60)
+    const minute = time % 60
+    slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`)
+  }
+
+  // Filter out past times if booking for today
+  const today = new Date().toISOString().split('T')[0]
+  if (date === today) {
+    const now = new Date()
+    const currentMinutes = now.getHours() * 60 + now.getMinutes() + 30 // At least 30 min in advance
+
+    const filteredSlots = slots.filter(slot => {
+      const [h, m] = slot.split(':').map(Number)
+      return h * 60 + m > currentMinutes
+    })
+
+    return { slots: filteredSlots, error: null }
+  }
+
+  return { slots, error: null }
+}
+
+/**
+ * Create a gastronomy reservation
+ */
+export async function createGastroReservation(formData: FormData): Promise<{
+  confirmationToken: string | null
+  reservationId: string | null
+  error: string | null
+}> {
+  const adminClient = createAdminClient()
+
+  // Extract form data
+  const tenantSlug = formData.get('tenant_slug') as string
+  const reservationDate = formData.get('reservation_date') as string
+  const reservationTime = formData.get('reservation_time') as string
+  const guestCount = parseInt(formData.get('guest_count') as string)
+  const notes = formData.get('notes') as string
+  const locationId = formData.get('location_id') as string | null
+
+  // Customer data
+  const firstName = formData.get('first_name') as string
+  const lastName = formData.get('last_name') as string
+  const email = formData.get('email') as string
+  const phone = formData.get('phone') as string
+
+  // Validate required fields
+  if (!tenantSlug || !reservationDate || !reservationTime || !guestCount || !firstName || !lastName) {
+    return { confirmationToken: null, reservationId: null, error: 'Bitte fülle alle Pflichtfelder aus' }
+  }
+
+  if (!email && !phone) {
+    return { confirmationToken: null, reservationId: null, error: 'Bitte gib eine Email-Adresse oder Telefonnummer an' }
+  }
+
+  if (guestCount < 1 || guestCount > 20) {
+    return { confirmationToken: null, reservationId: null, error: 'Ungültige Personenzahl' }
+  }
+
+  // Get tenant
+  const { data: tenant } = await adminClient
+    .from('tenants')
+    .select('id, name')
+    .eq('slug', tenantSlug)
+    .single() as { data: { id: string; name: string } | null }
+
+  if (!tenant) {
+    return { confirmationToken: null, reservationId: null, error: 'Restaurant nicht gefunden' }
+  }
+
+  // Calculate start time (reservation typically 2 hours)
+  const startTime = new Date(`${reservationDate}T${reservationTime}`)
+  const endTime = new Date(startTime.getTime() + 2 * 60 * 60000) // 2 hours
+
+  // Find or create customer
+  let customerId: string
+
+  // Try to find existing customer by email or phone
+  let existingCustomer: Customer | null = null
+
+  if (email) {
+    const { data } = await adminClient
+      .from('customers')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .eq('email', email)
+      .single() as { data: Customer | null }
+
+    existingCustomer = data
+  }
+
+  if (!existingCustomer && phone) {
+    const { data } = await adminClient
+      .from('customers')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .eq('phone', phone)
+      .single() as { data: Customer | null }
+
+    existingCustomer = data
+  }
+
+  if (existingCustomer) {
+    customerId = existingCustomer.id
+
+    // Update customer info if changed
+    await (adminClient
+      .from('customers')
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        email: email || existingCustomer.email,
+        phone: phone || existingCustomer.phone,
+      } as unknown as never)
+      .eq('id', customerId) as unknown as Promise<unknown>)
+  } else {
+    // Create new customer
+    const { data: newCustomer, error: customerError } = await (adminClient
+      .from('customers')
+      .insert({
+        tenant_id: tenant.id,
+        first_name: firstName,
+        last_name: lastName,
+        email: email || null,
+        phone: phone || null,
+      } as unknown as never)
+      .select('id')
+      .single() as unknown as Promise<{ data: { id: string } | null; error: Error | null }>)
+
+    if (customerError || !newCustomer) {
+      console.error('Error creating customer:', customerError)
+      return { confirmationToken: null, reservationId: null, error: 'Fehler beim Erstellen des Kundenprofils' }
+    }
+
+    customerId = newCustomer.id
+  }
+
+  // Generate confirmation token
+  const confirmationToken = generateConfirmationToken()
+
+  // Create reservation as appointment (reusing appointments table)
+  // For gastro, we store guest_count in customer_notes or a separate field
+  const reservationNotes = `Reservierung für ${guestCount} ${guestCount === 1 ? 'Person' : 'Personen'}${notes ? `. Anmerkungen: ${notes}` : ''}`
+
+  const { data: reservation, error: reservationError } = await (adminClient
+    .from('appointments')
+    .insert({
+      tenant_id: tenant.id,
+      customer_id: customerId,
+      service_id: null, // No service for reservations
+      employee_id: null,
+      location_id: locationId || null,
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+      price: 0, // Reservations are free
+      status: 'scheduled',
+      customer_notes: reservationNotes,
+      confirmation_token: confirmationToken,
+    } as unknown as never)
+    .select('id')
+    .single() as unknown as Promise<{ data: { id: string } | null; error: Error | null }>)
+
+  if (reservationError || !reservation) {
+    console.error('Error creating reservation:', reservationError)
+    return { confirmationToken: null, reservationId: null, error: 'Fehler beim Erstellen der Reservierung' }
+  }
+
+  // TODO: Send confirmation email for reservations
+
+  return {
+    confirmationToken,
+    reservationId: reservation.id,
+    error: null
+  }
+}

@@ -8,12 +8,14 @@ import {
   Calendar,
   Clock,
   User,
+  Users,
   Sparkles,
   Check,
   Loader2,
   ClockIcon,
+  UtensilsCrossed,
 } from 'lucide-react'
-import { getAvailableSlots, createPublicBooking, type Employee } from '@/lib/actions/public-booking'
+import { getAvailableSlots, createPublicBooking, createGastroReservation, getGastroSlots, type Employee } from '@/lib/actions/public-booking'
 import { WaitlistForm } from './waitlist-form'
 import type { Database } from '@/lib/types/database'
 
@@ -34,15 +36,20 @@ interface BookingFormProps {
   employees: Employee[]
   locationId?: string
   customerData?: CustomerData
+  businessType?: string
 }
 
-type Step = 'service' | 'employee' | 'datetime' | 'customer' | 'confirm' | 'waitlist'
+type Step = 'service' | 'employee' | 'datetime' | 'customer' | 'confirm' | 'waitlist' | 'guests'
 
-export function BookingForm({ tenant, services, employees, locationId, customerData }: BookingFormProps) {
+export function BookingForm({ tenant, services, employees, locationId, customerData, businessType = 'beauty_clinic' }: BookingFormProps) {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState<Step>('service')
+  const isGastronomy = businessType === 'gastronomy'
+  const [currentStep, setCurrentStep] = useState<Step>(isGastronomy ? 'guests' : 'service')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Gastro-specific state
+  const [guestCount, setGuestCount] = useState(2)
 
   // Category filter
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -78,7 +85,13 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
 
   // Fetch available slots when date/service/employee changes
   useEffect(() => {
-    if (!selectedDate || !selectedService) {
+    if (!selectedDate) {
+      setAvailableSlots([])
+      return
+    }
+
+    // For gastronomy, we don't need a service selected
+    if (!isGastronomy && !selectedService) {
       setAvailableSlots([])
       return
     }
@@ -86,37 +99,68 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
     setLoadingSlots(true)
     setSelectedTime('')
 
-    getAvailableSlots({
-      tenantId: tenant.id,
-      serviceId: selectedService.id,
-      employeeId: selectedEmployee?.id,
-      date: selectedDate,
-    })
-      .then(({ slots, error }) => {
-        if (error) {
-          setError(error)
-          setAvailableSlots([])
-        } else {
-          setAvailableSlots(slots)
-        }
+    if (isGastronomy) {
+      // Gastro: Get available reservation times
+      getGastroSlots({
+        tenantId: tenant.id,
+        date: selectedDate,
+        guestCount,
       })
-      .finally(() => {
-        setLoadingSlots(false)
+        .then(({ slots, error }) => {
+          if (error) {
+            setError(error)
+            setAvailableSlots([])
+          } else {
+            setAvailableSlots(slots)
+          }
+        })
+        .finally(() => {
+          setLoadingSlots(false)
+        })
+    } else {
+      // Standard: Get available appointment slots
+      getAvailableSlots({
+        tenantId: tenant.id,
+        serviceId: selectedService!.id,
+        employeeId: selectedEmployee?.id,
+        date: selectedDate,
       })
-  }, [selectedDate, selectedService, selectedEmployee, tenant.id])
+        .then(({ slots, error }) => {
+          if (error) {
+            setError(error)
+            setAvailableSlots([])
+          } else {
+            setAvailableSlots(slots)
+          }
+        })
+        .finally(() => {
+          setLoadingSlots(false)
+        })
+    }
+  }, [selectedDate, selectedService, selectedEmployee, tenant.id, isGastronomy, guestCount])
 
-  const steps: { key: Step; label: string }[] = [
-    { key: 'service', label: 'Service' },
-    { key: 'employee', label: 'Mitarbeiter' },
-    { key: 'datetime', label: 'Termin' },
-    { key: 'customer', label: 'Daten' },
-    { key: 'confirm', label: 'Bestätigen' },
-  ]
+  // Different steps for gastronomy vs other business types
+  const steps: { key: Step; label: string }[] = isGastronomy
+    ? [
+        { key: 'guests', label: 'Gäste' },
+        { key: 'datetime', label: 'Termin' },
+        { key: 'customer', label: 'Daten' },
+        { key: 'confirm', label: 'Bestätigen' },
+      ]
+    : [
+        { key: 'service', label: 'Service' },
+        { key: 'employee', label: 'Mitarbeiter' },
+        { key: 'datetime', label: 'Termin' },
+        { key: 'customer', label: 'Daten' },
+        { key: 'confirm', label: 'Bestätigen' },
+      ]
 
   const currentStepIndex = steps.findIndex(s => s.key === currentStep)
 
   const canProceed = () => {
     switch (currentStep) {
+      case 'guests':
+        return guestCount >= 1 && guestCount <= 20
       case 'service':
         return selectedService !== null
       case 'employee':
@@ -149,43 +193,78 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
   }
 
   const handleSubmit = async () => {
-    if (!selectedService || !selectedDate || !selectedTime) {
+    if (!selectedDate || !selectedTime) {
       setError('Bitte fülle alle Pflichtfelder aus')
+      return
+    }
+
+    // For non-gastro, service is required
+    if (!isGastronomy && !selectedService) {
+      setError('Bitte wähle eine Behandlung aus')
       return
     }
 
     setIsSubmitting(true)
     setError(null)
 
-    const formData = new FormData()
-    formData.set('tenant_slug', tenant.slug)
-    formData.set('service_id', selectedService.id)
-    if (selectedEmployee) {
-      formData.set('employee_id', selectedEmployee.id)
-    }
-    if (locationId) {
-      formData.set('location_id', locationId)
-    }
-    formData.set('appointment_date', selectedDate)
-    formData.set('appointment_time', selectedTime)
-    formData.set('first_name', firstName)
-    formData.set('last_name', lastName)
-    formData.set('email', email)
-    formData.set('phone', phone)
-    formData.set('customer_notes', notes)
-    formData.set('marketing_consent', marketingConsent.toString())
-    formData.set('sms_consent', smsConsent.toString())
+    if (isGastronomy) {
+      // Gastro reservation
+      const formData = new FormData()
+      formData.set('tenant_slug', tenant.slug)
+      formData.set('reservation_date', selectedDate)
+      formData.set('reservation_time', selectedTime)
+      formData.set('guest_count', guestCount.toString())
+      formData.set('first_name', firstName)
+      formData.set('last_name', lastName)
+      formData.set('email', email)
+      formData.set('phone', phone)
+      formData.set('notes', notes)
+      if (locationId) {
+        formData.set('location_id', locationId)
+      }
 
-    const result = await createPublicBooking(formData)
+      const result = await createGastroReservation(formData)
 
-    if (result.error) {
-      setError(result.error)
-      setIsSubmitting(false)
-      return
+      if (result.error) {
+        setError(result.error)
+        setIsSubmitting(false)
+        return
+      }
+
+      // Redirect to success page
+      router.push(`/book/${tenant.slug}/success?token=${result.confirmationToken}&type=reservation`)
+    } else {
+      // Standard booking
+      const formData = new FormData()
+      formData.set('tenant_slug', tenant.slug)
+      formData.set('service_id', selectedService!.id)
+      if (selectedEmployee) {
+        formData.set('employee_id', selectedEmployee.id)
+      }
+      if (locationId) {
+        formData.set('location_id', locationId)
+      }
+      formData.set('appointment_date', selectedDate)
+      formData.set('appointment_time', selectedTime)
+      formData.set('first_name', firstName)
+      formData.set('last_name', lastName)
+      formData.set('email', email)
+      formData.set('phone', phone)
+      formData.set('customer_notes', notes)
+      formData.set('marketing_consent', marketingConsent.toString())
+      formData.set('sms_consent', smsConsent.toString())
+
+      const result = await createPublicBooking(formData)
+
+      if (result.error) {
+        setError(result.error)
+        setIsSubmitting(false)
+        return
+      }
+
+      // Redirect to success page
+      router.push(`/book/${tenant.slug}/success?token=${result.confirmationToken}`)
     }
-
-    // Redirect to success page
-    router.push(`/book/${tenant.slug}/success?token=${result.confirmationToken}`)
   }
 
   const formatDate = (dateStr: string) => {
@@ -266,22 +345,79 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
       <div className="bg-white/5 border border-white/10 rounded-xl">
         <div className="p-6 border-b border-white/10">
           <h2 className="text-xl font-semibold text-white">
+            {currentStep === 'guests' && 'Wie viele Gäste?'}
             {currentStep === 'service' && 'Wähle eine Behandlung'}
             {currentStep === 'employee' && 'Wähle einen Mitarbeiter'}
-            {currentStep === 'datetime' && 'Wähle Datum & Uhrzeit'}
+            {currentStep === 'datetime' && (isGastronomy ? 'Wähle Datum & Uhrzeit' : 'Wähle Datum & Uhrzeit')}
             {currentStep === 'customer' && 'Deine Kontaktdaten'}
             {currentStep === 'confirm' && 'Bestätigung'}
           </h2>
           <p className="text-white/60 mt-1">
+            {currentStep === 'guests' && 'Für wie viele Personen möchtest du reservieren?'}
             {currentStep === 'service' && 'Welche Behandlung möchtest du buchen?'}
             {currentStep === 'employee' && 'Optional: Wähle deinen Wunsch-Mitarbeiter'}
             {currentStep === 'datetime' && 'Wann passt es dir am besten?'}
             {currentStep === 'customer' && 'Wir benötigen deine Kontaktdaten für die Bestätigung'}
-            {currentStep === 'confirm' && 'Überprüfe deine Buchung'}
+            {currentStep === 'confirm' && (isGastronomy ? 'Überprüfe deine Reservierung' : 'Überprüfe deine Buchung')}
           </p>
         </div>
 
         <div className="p-6">
+          {/* Guest Count Selection (Gastro only) */}
+          {currentStep === 'guests' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-center gap-6">
+                <button
+                  type="button"
+                  onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                  disabled={guestCount <= 1}
+                  className="w-14 h-14 rounded-full bg-white/10 border border-white/20 text-white text-2xl font-light hover:bg-white/20 hover:border-amber-500/50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  −
+                </button>
+                <div className="text-center">
+                  <div className="text-5xl font-light text-amber-400">{guestCount}</div>
+                  <div className="text-white/50 text-sm mt-1">
+                    {guestCount === 1 ? 'Person' : 'Personen'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGuestCount(Math.min(20, guestCount + 1))}
+                  disabled={guestCount >= 20}
+                  className="w-14 h-14 rounded-full bg-white/10 border border-white/20 text-white text-2xl font-light hover:bg-white/20 hover:border-amber-500/50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Quick select buttons */}
+              <div className="flex flex-wrap justify-center gap-2 pt-4 border-t border-white/10">
+                {[2, 4, 6, 8, 10].map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setGuestCount(count)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      guestCount === count
+                        ? 'bg-amber-500 text-black'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    {count} Personen
+                  </button>
+                ))}
+              </div>
+
+              {guestCount >= 8 && (
+                <p className="text-center text-amber-400 text-sm bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg">
+                  <UtensilsCrossed className="w-4 h-4 inline mr-2" />
+                  Für größere Gruppen empfehlen wir eine telefonische Reservierung
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Service Selection */}
           {currentStep === 'service' && (
             <div className="space-y-4">
@@ -603,39 +739,63 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
           )}
 
           {/* Confirmation */}
-          {currentStep === 'confirm' && selectedService && (
+          {currentStep === 'confirm' && (
             <div className="space-y-4">
               <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-white/50">Behandlung</span>
-                  <span className="font-medium text-white">{selectedService.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Dauer</span>
-                  <span className="text-white">{selectedService.duration_minutes} Minuten</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Mitarbeiter</span>
-                  <span className="text-white">
-                    {selectedEmployee
-                      ? `${selectedEmployee.first_name} ${selectedEmployee.last_name}`
-                      : 'Nächster Verfügbarer'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Datum</span>
-                  <span className="text-white">{formatDate(selectedDate)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">Uhrzeit</span>
-                  <span className="text-white">{selectedTime} Uhr</span>
-                </div>
-                <div className="flex justify-between pt-3 border-t border-white/10">
-                  <span className="font-medium text-white">Preis</span>
-                  <span className="font-bold text-amber-400">
-                    {formatPrice(selectedService.price)}
-                  </span>
-                </div>
+                {isGastronomy ? (
+                  <>
+                    {/* Gastro Reservation Confirmation */}
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Anzahl Gäste</span>
+                      <span className="font-medium text-white flex items-center">
+                        <Users className="w-4 h-4 mr-2 text-amber-400" />
+                        {guestCount} {guestCount === 1 ? 'Person' : 'Personen'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Datum</span>
+                      <span className="text-white">{formatDate(selectedDate)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Uhrzeit</span>
+                      <span className="text-white">{selectedTime} Uhr</span>
+                    </div>
+                  </>
+                ) : selectedService && (
+                  <>
+                    {/* Standard Booking Confirmation */}
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Behandlung</span>
+                      <span className="font-medium text-white">{selectedService.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Dauer</span>
+                      <span className="text-white">{selectedService.duration_minutes} Minuten</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Mitarbeiter</span>
+                      <span className="text-white">
+                        {selectedEmployee
+                          ? `${selectedEmployee.first_name} ${selectedEmployee.last_name}`
+                          : 'Nächster Verfügbarer'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Datum</span>
+                      <span className="text-white">{formatDate(selectedDate)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Uhrzeit</span>
+                      <span className="text-white">{selectedTime} Uhr</span>
+                    </div>
+                    <div className="flex justify-between pt-3 border-t border-white/10">
+                      <span className="font-medium text-white">Preis</span>
+                      <span className="font-bold text-amber-400">
+                        {formatPrice(selectedService.price)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-2">
@@ -651,7 +811,7 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
               </div>
 
               <p className="text-sm text-white/50">
-                Nach der Buchung erhältst du eine Bestätigung per{' '}
+                Nach der {isGastronomy ? 'Reservierung' : 'Buchung'} erhältst du eine Bestätigung per{' '}
                 {email && phone ? 'Email und WhatsApp' : email ? 'Email' : 'WhatsApp'}.
               </p>
             </div>
@@ -681,12 +841,12 @@ export function BookingForm({ tenant, services, employees, locationId, customerD
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Wird gebucht...
+                {isGastronomy ? 'Wird reserviert...' : 'Wird gebucht...'}
               </>
             ) : (
               <>
                 <Check className="w-4 h-4 mr-2" />
-                Jetzt buchen
+                {isGastronomy ? 'Jetzt reservieren' : 'Jetzt buchen'}
               </>
             )}
           </button>
