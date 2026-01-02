@@ -67,6 +67,11 @@ interface Service {
   duration_minutes: number
   price: number
   category: string | null
+  image_url: string | null
+  allergens: string[] | null
+  is_vegetarian: boolean
+  is_vegan: boolean
+  is_spicy: boolean
 }
 
 interface Employee {

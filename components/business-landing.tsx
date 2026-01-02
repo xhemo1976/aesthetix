@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ChatWidget } from '@/components/chat-widget'
+import { MenuCard } from '@/components/menu-card'
 import { getBusinessTypeConfig, type BusinessType } from '@/lib/config/business-types'
 import {
   Calendar,
@@ -33,6 +34,11 @@ interface Service {
   duration_minutes: number
   price: number
   category: string | null
+  image_url?: string | null
+  allergens?: string[] | null
+  is_vegetarian?: boolean
+  is_vegan?: boolean
+  is_spicy?: boolean
 }
 
 interface Employee {
@@ -327,128 +333,137 @@ export function BusinessLanding({ tenant, services, employees, locations }: Busi
         </div>
       </section>
 
-      {/* Services Section - Accordion Style */}
+      {/* Services Section - Modern Menu for Gastronomy, Accordion for others */}
       <section id="services" className="py-32 bg-gradient-to-b from-[#0a0a0a] via-[#111] to-[#0a0a0a] scroll-mt-24">
-        <div className="max-w-4xl mx-auto px-6">
+        <div className={businessType === 'gastronomy' ? 'max-w-7xl mx-auto px-6' : 'max-w-4xl mx-auto px-6'}>
           <div className="text-center mb-16">
             <span className="text-amber-400 tracking-[0.3em] uppercase text-sm">{config.labels.servicesDescription}</span>
             <h2 className="text-4xl md:text-5xl font-extralight mt-4 tracking-wide">
               {config.landing.servicesTitle}
             </h2>
             <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mt-8" />
-            <p className="text-white/50 mt-6">Wählen Sie eine Kategorie</p>
-          </div>
-
-          {/* Category Accordions */}
-          <div className="space-y-4">
-            {categories.map((category) => (
-              <div
-                key={category}
-                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden"
-              >
-                {/* Category Header - Clickable */}
-                <button
-                  onClick={() => setExpandedCategory(expandedCategory === category ? null : category)}
-                  className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center">
-                      <BusinessIcon className="w-6 h-6 text-amber-400" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-xl font-light tracking-wide">{category}</h3>
-                      <p className="text-white/50 text-sm">{servicesByCategory[category].length} {config.labels.services}</p>
-                    </div>
-                  </div>
-                  <ChevronDown className={`w-6 h-6 text-amber-400 transition-transform duration-300 ${expandedCategory === category ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Services List - Expandable */}
-                {expandedCategory === category && (
-                  <div className="border-t border-white/10">
-                    {servicesByCategory[category].map((service) => (
-                      <div
-                        key={service.id}
-                        className="px-8 py-5 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-light tracking-wide">{service.name}</h4>
-                            {service.description && (
-                              <p className="text-white/40 text-sm mt-1 line-clamp-1">{service.description}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-6 ml-4">
-                            {service.duration_minutes > 0 && (
-                              <div className="flex items-center gap-2 text-white/50 text-sm">
-                                <Clock className="w-4 h-4" />
-                                {service.duration_minutes} Min
-                              </div>
-                            )}
-                            <div className="text-amber-400 font-light text-lg min-w-[80px] text-right">
-                              {service.price > 0 ? `€${service.price}` : 'Anfrage'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Uncategorized Services */}
-            {uncategorizedServices.length > 0 && (
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
-                <button
-                  onClick={() => setExpandedCategory(expandedCategory === '_other' ? null : '_other')}
-                  className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center">
-                      <BusinessIcon className="w-6 h-6 text-amber-400" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-xl font-light tracking-wide">Weitere</h3>
-                      <p className="text-white/50 text-sm">{uncategorizedServices.length} {config.labels.services}</p>
-                    </div>
-                  </div>
-                  <ChevronDown className={`w-6 h-6 text-amber-400 transition-transform duration-300 ${expandedCategory === '_other' ? 'rotate-180' : ''}`} />
-                </button>
-
-                {expandedCategory === '_other' && (
-                  <div className="border-t border-white/10">
-                    {uncategorizedServices.map((service) => (
-                      <div
-                        key={service.id}
-                        className="px-8 py-5 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-light tracking-wide">{service.name}</h4>
-                            {service.description && (
-                              <p className="text-white/40 text-sm mt-1 line-clamp-1">{service.description}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-6 ml-4">
-                            {service.duration_minutes > 0 && (
-                              <div className="flex items-center gap-2 text-white/50 text-sm">
-                                <Clock className="w-4 h-4" />
-                                {service.duration_minutes} Min
-                              </div>
-                            )}
-                            <div className="text-amber-400 font-light text-lg min-w-[80px] text-right">
-                              {service.price > 0 ? `€${service.price}` : 'Anfrage'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {businessType !== 'gastronomy' && (
+              <p className="text-white/50 mt-6">Wählen Sie eine Kategorie</p>
             )}
           </div>
+
+          {/* Modern Menu Card for Gastronomy */}
+          {businessType === 'gastronomy' ? (
+            <MenuCard items={services} />
+          ) : (
+            <>
+              {/* Category Accordions for other business types */}
+              <div className="space-y-4">
+                {categories.map((category) => (
+                  <div
+                    key={category}
+                    className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden"
+                  >
+                    {/* Category Header - Clickable */}
+                    <button
+                      onClick={() => setExpandedCategory(expandedCategory === category ? null : category)}
+                      className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center">
+                          <BusinessIcon className="w-6 h-6 text-amber-400" />
+                        </div>
+                        <div className="text-left">
+                          <h3 className="text-xl font-light tracking-wide">{category}</h3>
+                          <p className="text-white/50 text-sm">{servicesByCategory[category].length} {config.labels.services}</p>
+                        </div>
+                      </div>
+                      <ChevronDown className={`w-6 h-6 text-amber-400 transition-transform duration-300 ${expandedCategory === category ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Services List - Expandable */}
+                    {expandedCategory === category && (
+                      <div className="border-t border-white/10">
+                        {servicesByCategory[category].map((service) => (
+                          <div
+                            key={service.id}
+                            className="px-8 py-5 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-light tracking-wide">{service.name}</h4>
+                                {service.description && (
+                                  <p className="text-white/40 text-sm mt-1 line-clamp-1">{service.description}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-6 ml-4">
+                                {service.duration_minutes > 0 && (
+                                  <div className="flex items-center gap-2 text-white/50 text-sm">
+                                    <Clock className="w-4 h-4" />
+                                    {service.duration_minutes} Min
+                                  </div>
+                                )}
+                                <div className="text-amber-400 font-light text-lg min-w-[80px] text-right">
+                                  {service.price > 0 ? `€${service.price}` : 'Anfrage'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Uncategorized Services */}
+                {uncategorizedServices.length > 0 && (
+                  <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
+                    <button
+                      onClick={() => setExpandedCategory(expandedCategory === '_other' ? null : '_other')}
+                      className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 flex items-center justify-center">
+                          <BusinessIcon className="w-6 h-6 text-amber-400" />
+                        </div>
+                        <div className="text-left">
+                          <h3 className="text-xl font-light tracking-wide">Weitere</h3>
+                          <p className="text-white/50 text-sm">{uncategorizedServices.length} {config.labels.services}</p>
+                        </div>
+                      </div>
+                      <ChevronDown className={`w-6 h-6 text-amber-400 transition-transform duration-300 ${expandedCategory === '_other' ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {expandedCategory === '_other' && (
+                      <div className="border-t border-white/10">
+                        {uncategorizedServices.map((service) => (
+                          <div
+                            key={service.id}
+                            className="px-8 py-5 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-light tracking-wide">{service.name}</h4>
+                                {service.description && (
+                                  <p className="text-white/40 text-sm mt-1 line-clamp-1">{service.description}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-6 ml-4">
+                                {service.duration_minutes > 0 && (
+                                  <div className="flex items-center gap-2 text-white/50 text-sm">
+                                    <Clock className="w-4 h-4" />
+                                    {service.duration_minutes} Min
+                                  </div>
+                                )}
+                                <div className="text-amber-400 font-light text-lg min-w-[80px] text-right">
+                                  {service.price > 0 ? `€${service.price}` : 'Anfrage'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="text-center mt-16">
             <Link href={bookingUrl}>
