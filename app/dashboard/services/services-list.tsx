@@ -14,11 +14,15 @@ type Service = {
   name: string
   description: string | null
   category: string | null
+  category_image_url?: string | null
   price: number
   duration_minutes: number
   is_active: boolean
   image_url?: string | null
   allergens?: string[] | null
+  diet_labels?: string[] | null
+  other_labels?: string[] | null
+  cross_contamination?: string[] | null
   is_vegetarian?: boolean
   is_vegan?: boolean
   is_spicy?: boolean

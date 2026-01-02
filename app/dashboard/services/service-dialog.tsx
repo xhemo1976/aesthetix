@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -120,6 +120,39 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
   const [selectedCrossContamination, setSelectedCrossContamination] = useState<string[]>(service?.cross_contamination || [])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const categoryFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Reset state when dialog opens or service changes
+  useEffect(() => {
+    if (open) {
+      setImagePreview(service?.image_url || null)
+      setImageFile(null)
+      setCategoryImagePreview(service?.category_image_url || null)
+      setCategoryImageFile(null)
+      setSelectedAllergens(service?.allergens || [])
+
+      // Diet labels - migrate from legacy if needed
+      if (service?.diet_labels?.length) {
+        setSelectedDietLabels(service.diet_labels)
+      } else {
+        const legacy: string[] = []
+        if (service?.is_vegetarian) legacy.push('vegetarian')
+        if (service?.is_vegan) legacy.push('vegan')
+        setSelectedDietLabels(legacy)
+      }
+
+      // Other labels - migrate from legacy if needed
+      if (service?.other_labels?.length) {
+        setSelectedOtherLabels(service.other_labels)
+      } else {
+        const legacy: string[] = []
+        if (service?.is_spicy) legacy.push('spicy')
+        setSelectedOtherLabels(legacy)
+      }
+
+      setSelectedCrossContamination(service?.cross_contamination || [])
+      setError(null)
+    }
+  }, [open, service])
 
   const isEditing = !!service
   const isGastronomy = businessType === 'gastronomy'
