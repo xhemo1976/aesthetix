@@ -81,6 +81,7 @@ export async function createService(formData: FormData) {
 
   // Gastronomy fields
   const image_url = formData.get('image_url') as string || null
+  const category_image_url = formData.get('category_image_url') as string || null
   const allergensJson = formData.get('allergens') as string
   const allergens = allergensJson ? JSON.parse(allergensJson) : []
   const dietLabelsJson = formData.get('diet_labels') as string
@@ -101,14 +102,12 @@ export async function createService(formData: FormData) {
       name,
       description,
       category,
+      category_image_url: category_image_url || null,
       price,
       duration_minutes,
       is_active: true,
       image_url: image_url || null,
       allergens: allergens.length > 0 ? allergens : null,
-      diet_labels: diet_labels.length > 0 ? diet_labels : null,
-      other_labels: other_labels.length > 0 ? other_labels : null,
-      cross_contamination: cross_contamination.length > 0 ? cross_contamination : null,
       is_vegetarian,
       is_vegan,
       is_spicy,
@@ -134,14 +133,9 @@ export async function updateService(id: string, formData: FormData) {
 
   // Gastronomy fields
   const image_url = formData.get('image_url') as string || null
+  const category_image_url = formData.get('category_image_url') as string || null
   const allergensJson = formData.get('allergens') as string
   const allergens = allergensJson ? JSON.parse(allergensJson) : []
-  const dietLabelsJson = formData.get('diet_labels') as string
-  const diet_labels = dietLabelsJson ? JSON.parse(dietLabelsJson) : []
-  const otherLabelsJson = formData.get('other_labels') as string
-  const other_labels = otherLabelsJson ? JSON.parse(otherLabelsJson) : []
-  const crossContaminationJson = formData.get('cross_contamination') as string
-  const cross_contamination = crossContaminationJson ? JSON.parse(crossContaminationJson) : []
   // Legacy fields for backwards compatibility
   const is_vegetarian = formData.get('is_vegetarian') === 'true'
   const is_vegan = formData.get('is_vegan') === 'true'
@@ -153,13 +147,11 @@ export async function updateService(id: string, formData: FormData) {
       name,
       description,
       category,
+      category_image_url: category_image_url || null,
       price,
       duration_minutes,
       image_url: image_url || null,
       allergens: allergens.length > 0 ? allergens : null,
-      diet_labels: diet_labels.length > 0 ? diet_labels : null,
-      other_labels: other_labels.length > 0 ? other_labels : null,
-      cross_contamination: cross_contamination.length > 0 ? cross_contamination : null,
       is_vegetarian,
       is_vegan,
       is_spicy,

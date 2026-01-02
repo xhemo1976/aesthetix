@@ -73,6 +73,7 @@ type Service = {
   name: string
   description: string | null
   category: string | null
+  category_image_url?: string | null
   price: number
   duration_minutes: number
   image_url?: string | null
@@ -86,26 +87,21 @@ type Service = {
   is_spicy?: boolean
 }
 
-type Category = {
-  id: string
-  name: string
-  image_url: string | null
-}
-
 type ServiceDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   service?: Service | null
   businessType?: string
-  categories?: Category[]
 }
 
-export function ServiceDialog({ open, onOpenChange, service, businessType = 'beauty_clinic', categories = [] }: ServiceDialogProps) {
+export function ServiceDialog({ open, onOpenChange, service, businessType = 'beauty_clinic' }: ServiceDialogProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(service?.image_url || null)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [categoryImagePreview, setCategoryImagePreview] = useState<string | null>(service?.category_image_url || null)
+  const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null)
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>(service?.allergens || [])
   const [selectedDietLabels, setSelectedDietLabels] = useState<string[]>(() => {
     // Initialize from new field or migrate from legacy fields
@@ -123,6 +119,7 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
   })
   const [selectedCrossContamination, setSelectedCrossContamination] = useState<string[]>(service?.cross_contamination || [])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const categoryFileInputRef = useRef<HTMLInputElement>(null)
 
   const isEditing = !!service
   const isGastronomy = businessType === 'gastronomy'
@@ -186,6 +183,38 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
     }
   }
 
+  async function handleCategoryImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1200,
+        useWebWorker: true,
+      }
+      const compressedFile = await imageCompression(file, options)
+      setCategoryImageFile(compressedFile)
+
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setCategoryImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(compressedFile)
+    } catch (err) {
+      console.error('Error compressing category image:', err)
+      setError('Fehler beim Verarbeiten des Bildes')
+    }
+  }
+
+  function removeCategoryImage() {
+    setCategoryImagePreview(null)
+    setCategoryImageFile(null)
+    if (categoryFileInputRef.current) {
+      categoryFileInputRef.current.value = ''
+    }
+  }
+
   function toggleAllergen(allergen: string) {
     setSelectedAllergens(prev =>
       prev.includes(allergen)
@@ -236,8 +265,22 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
         imageUrl = null
       }
 
+      // Upload category image if there's a new one
+      let categoryImageUrl = service?.category_image_url || null
+      if (categoryImageFile) {
+        const uploadResult = await uploadServiceImage(categoryImageFile)
+        if (uploadResult.error) {
+          throw new Error(uploadResult.error)
+        }
+        categoryImageUrl = uploadResult.url
+      } else if (!categoryImagePreview && service?.category_image_url) {
+        // Category image was removed
+        categoryImageUrl = null
+      }
+
       // Add extra fields to formData
       formData.set('image_url', imageUrl || '')
+      formData.set('category_image_url', categoryImageUrl || '')
       formData.set('allergens', JSON.stringify(selectedAllergens))
       formData.set('diet_labels', JSON.stringify(selectedDietLabels))
       formData.set('other_labels', JSON.stringify(selectedOtherLabels))
@@ -352,31 +395,60 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
 
           <div className="space-y-2">
             <Label htmlFor="category">{labels.category}</Label>
-            {isGastronomy && categories.length > 0 ? (
-              <select
-                id="category"
-                name="category"
-                defaultValue={service?.category || ''}
-                disabled={loading}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">-- Kategorie wählen --</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.name}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <Input
-                id="category"
-                name="category"
-                placeholder={labels.categoryPlaceholder}
-                defaultValue={service?.category || ''}
-                disabled={loading}
-              />
-            )}
+            <Input
+              id="category"
+              name="category"
+              placeholder={labels.categoryPlaceholder}
+              defaultValue={service?.category || ''}
+              disabled={loading}
+            />
           </div>
+
+          {/* Category Image - Only for Gastronomy */}
+          {isGastronomy && (
+            <div className="space-y-2">
+              <Label>Warengruppen-Bild (optional)</Label>
+              <div className="flex items-start gap-4">
+                {categoryImagePreview ? (
+                  <div className="relative w-32 h-20 rounded-lg overflow-hidden border">
+                    <Image
+                      src={categoryImagePreview}
+                      alt="Kategorie-Vorschau"
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeCategoryImage}
+                      className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => categoryFileInputRef.current?.click()}
+                    className="w-32 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    <Upload className="w-5 h-5 mb-1" />
+                    <span className="text-xs">Bild wählen</span>
+                  </button>
+                )}
+                <input
+                  ref={categoryFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCategoryImageChange}
+                  className="hidden"
+                />
+                <div className="text-xs text-muted-foreground">
+                  <p>Bild für die Warengruppe</p>
+                  <p>z.B. für Menü-Header</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
