@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation'
 import { Upload, X, Leaf, Flame, AlertTriangle } from 'lucide-react'
 import imageCompression from 'browser-image-compression'
 
-// Allergen options
+// EU-kennzeichnungspflichtige Allergene
 const ALLERGEN_OPTIONS = [
   { value: 'gluten', label: 'Gluten', icon: '🌾' },
   { value: 'lactose', label: 'Laktose', icon: '🥛' },
@@ -22,10 +22,50 @@ const ALLERGEN_OPTIONS = [
   { value: 'soy', label: 'Soja', icon: '🫘' },
   { value: 'fish', label: 'Fisch', icon: '🐟' },
   { value: 'shellfish', label: 'Schalentiere', icon: '🦐' },
+  { value: 'crustaceans', label: 'Krebstiere', icon: '🦀' },
+  { value: 'molluscs', label: 'Weichtiere', icon: '🦑' },
   { value: 'celery', label: 'Sellerie', icon: '🥬' },
   { value: 'mustard', label: 'Senf', icon: '🟡' },
   { value: 'sesame', label: 'Sesam', icon: '⚪' },
   { value: 'sulfites', label: 'Sulfite', icon: '🍷' },
+  { value: 'lupins', label: 'Lupinen', icon: '🌿' },
+]
+
+// Diät-/Ernährungsoptionen
+const DIET_OPTIONS = [
+  { value: 'vegetarian', label: 'Vegetarisch', icon: '🥬', color: 'text-green-500' },
+  { value: 'vegan', label: 'Vegan', icon: '🌱', color: 'text-emerald-500' },
+  { value: 'pescatarian', label: 'Pescetarisch', icon: '🐟', color: 'text-blue-500' },
+  { value: 'flexitarian', label: 'Flexitarisch', icon: '🥗', color: 'text-lime-500' },
+  { value: 'halal', label: 'Halal', icon: '☪️', color: 'text-green-600' },
+  { value: 'kosher', label: 'Koscher', icon: '✡️', color: 'text-blue-600' },
+  { value: 'lactose_free', label: 'Laktosefrei', icon: '🥛', color: 'text-sky-500' },
+  { value: 'gluten_free', label: 'Glutenfrei', icon: '🌾', color: 'text-amber-500' },
+  { value: 'sugar_free', label: 'Zuckerfrei', icon: '🚫', color: 'text-pink-500' },
+  { value: 'low_carb', label: 'Low Carb', icon: '📉', color: 'text-orange-500' },
+  { value: 'keto', label: 'Keto', icon: '🥑', color: 'text-green-600' },
+  { value: 'paleo', label: 'Paleo', icon: '🍖', color: 'text-amber-600' },
+]
+
+// Sonstige Kennzeichnungen
+const OTHER_LABELS = [
+  { value: 'spicy', label: 'Scharf', icon: '🌶️', color: 'text-red-500' },
+  { value: 'alcohol', label: 'Alkoholhaltig', icon: '🍷', color: 'text-purple-500' },
+  { value: 'caffeine', label: 'Koffeinhaltig', icon: '☕', color: 'text-amber-700' },
+  { value: 'additives', label: 'Mit Zusatzstoffen', icon: '⚗️', color: 'text-gray-500' },
+  { value: 'colorants', label: 'Mit Farbstoffen', icon: '🎨', color: 'text-pink-500' },
+  { value: 'preservatives', label: 'Mit Konservierungsstoffen', icon: '🧪', color: 'text-orange-500' },
+  { value: 'flavor_enhancers', label: 'Mit Geschmacksverstärkern', icon: '✨', color: 'text-yellow-500' },
+  { value: 'blackened', label: 'Geschwärzt', icon: '⬛', color: 'text-gray-700' },
+  { value: 'waxed', label: 'Gewachst', icon: '✨', color: 'text-yellow-400' },
+  { value: 'phosphate', label: 'Mit Phosphat', icon: '🔬', color: 'text-blue-400' },
+  { value: 'sweeteners', label: 'Mit Süßungsmitteln', icon: '🍬', color: 'text-pink-400' },
+]
+
+// Kreuzkontaminations-Hinweise
+const CROSS_CONTAMINATION = [
+  { value: 'traces_possible', label: 'Spuren von Allergenen möglich', icon: '⚠️' },
+  { value: 'no_separate_prep', label: 'Getrennte Zubereitung nicht garantiert', icon: '🍳' },
 ]
 
 type Service = {
@@ -37,6 +77,10 @@ type Service = {
   duration_minutes: number
   image_url?: string | null
   allergens?: string[] | null
+  diet_labels?: string[] | null
+  other_labels?: string[] | null
+  cross_contamination?: string[] | null
+  // Legacy fields (still supported)
   is_vegetarian?: boolean
   is_vegan?: boolean
   is_spicy?: boolean
@@ -56,9 +100,21 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
   const [imagePreview, setImagePreview] = useState<string | null>(service?.image_url || null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>(service?.allergens || [])
-  const [isVegetarian, setIsVegetarian] = useState(service?.is_vegetarian || false)
-  const [isVegan, setIsVegan] = useState(service?.is_vegan || false)
-  const [isSpicy, setIsSpicy] = useState(service?.is_spicy || false)
+  const [selectedDietLabels, setSelectedDietLabels] = useState<string[]>(() => {
+    // Initialize from new field or migrate from legacy fields
+    if (service?.diet_labels?.length) return service.diet_labels
+    const legacy: string[] = []
+    if (service?.is_vegetarian) legacy.push('vegetarian')
+    if (service?.is_vegan) legacy.push('vegan')
+    return legacy
+  })
+  const [selectedOtherLabels, setSelectedOtherLabels] = useState<string[]>(() => {
+    if (service?.other_labels?.length) return service.other_labels
+    const legacy: string[] = []
+    if (service?.is_spicy) legacy.push('spicy')
+    return legacy
+  })
+  const [selectedCrossContamination, setSelectedCrossContamination] = useState<string[]>(service?.cross_contamination || [])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isEditing = !!service
@@ -131,6 +187,30 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
     )
   }
 
+  function toggleDietLabel(label: string) {
+    setSelectedDietLabels(prev =>
+      prev.includes(label)
+        ? prev.filter(l => l !== label)
+        : [...prev, label]
+    )
+  }
+
+  function toggleOtherLabel(label: string) {
+    setSelectedOtherLabels(prev =>
+      prev.includes(label)
+        ? prev.filter(l => l !== label)
+        : [...prev, label]
+    )
+  }
+
+  function toggleCrossContamination(label: string) {
+    setSelectedCrossContamination(prev =>
+      prev.includes(label)
+        ? prev.filter(l => l !== label)
+        : [...prev, label]
+    )
+  }
+
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setError(null)
@@ -152,9 +232,13 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
       // Add extra fields to formData
       formData.set('image_url', imageUrl || '')
       formData.set('allergens', JSON.stringify(selectedAllergens))
-      formData.set('is_vegetarian', String(isVegetarian))
-      formData.set('is_vegan', String(isVegan))
-      formData.set('is_spicy', String(isSpicy))
+      formData.set('diet_labels', JSON.stringify(selectedDietLabels))
+      formData.set('other_labels', JSON.stringify(selectedOtherLabels))
+      formData.set('cross_contamination', JSON.stringify(selectedCrossContamination))
+      // Legacy fields for backwards compatibility
+      formData.set('is_vegetarian', String(selectedDietLabels.includes('vegetarian')))
+      formData.set('is_vegan', String(selectedDietLabels.includes('vegan')))
+      formData.set('is_spicy', String(selectedOtherLabels.includes('spicy')))
 
       const result = isEditing
         ? await updateService(service.id, formData)
@@ -305,44 +389,40 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
           {/* Gastronomy-specific fields */}
           {isGastronomy && (
             <>
-              {/* Diet options */}
+              {/* Diet / Nutrition options */}
               <div className="space-y-3">
-                <Label>Diät-Optionen</Label>
-                <div className="flex flex-wrap gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox
-                      checked={isVegetarian}
-                      onCheckedChange={(checked) => setIsVegetarian(checked as boolean)}
-                    />
-                    <Leaf className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Vegetarisch</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox
-                      checked={isVegan}
-                      onCheckedChange={(checked) => setIsVegan(checked as boolean)}
-                    />
-                    <Leaf className="w-4 h-4 text-emerald-500" />
-                    <span className="text-sm">Vegan</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox
-                      checked={isSpicy}
-                      onCheckedChange={(checked) => setIsSpicy(checked as boolean)}
-                    />
-                    <Flame className="w-4 h-4 text-red-500" />
-                    <span className="text-sm">Scharf</span>
-                  </label>
+                <Label className="flex items-center gap-2">
+                  <Leaf className="w-4 h-4 text-green-500" />
+                  Diät & Ernährung
+                </Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {DIET_OPTIONS.map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                        selectedDietLabels.includes(option.value)
+                          ? 'border-green-500 bg-green-500/10'
+                          : 'border-input hover:border-green-500/50'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={selectedDietLabels.includes(option.value)}
+                        onCheckedChange={() => toggleDietLabel(option.value)}
+                      />
+                      <span className="text-sm">{option.icon}</span>
+                      <span className="text-xs">{option.label}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
-              {/* Allergens */}
+              {/* Allergens (EU-compliant) */}
               <div className="space-y-3">
                 <Label className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  Allergene
+                  Allergene (EU-kennzeichnungspflichtig)
                 </Label>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {ALLERGEN_OPTIONS.map((allergen) => (
                     <label
                       key={allergen.value}
@@ -358,6 +438,60 @@ export function ServiceDialog({ open, onOpenChange, service, businessType = 'bea
                       />
                       <span className="text-sm">{allergen.icon}</span>
                       <span className="text-xs">{allergen.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Other Labels */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  Sonstige Kennzeichnungen
+                </Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {OTHER_LABELS.map((label) => (
+                    <label
+                      key={label.value}
+                      className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                        selectedOtherLabels.includes(label.value)
+                          ? 'border-orange-500 bg-orange-500/10'
+                          : 'border-input hover:border-orange-500/50'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={selectedOtherLabels.includes(label.value)}
+                        onCheckedChange={() => toggleOtherLabel(label.value)}
+                      />
+                      <span className="text-sm">{label.icon}</span>
+                      <span className="text-xs">{label.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cross Contamination Warnings */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                  Kreuzkontaminations-Hinweise
+                </Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {CROSS_CONTAMINATION.map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                        selectedCrossContamination.includes(option.value)
+                          ? 'border-red-500 bg-red-500/10'
+                          : 'border-input hover:border-red-500/50'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={selectedCrossContamination.includes(option.value)}
+                        onCheckedChange={() => toggleCrossContamination(option.value)}
+                      />
+                      <span className="text-sm">{option.icon}</span>
+                      <span className="text-sm">{option.label}</span>
                     </label>
                   ))}
                 </div>
