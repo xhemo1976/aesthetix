@@ -48,7 +48,7 @@
   /book/[slug]          - Öffentliche Buchungsseite (Dark Theme)
     /success            - Buchungsbestätigung
     /[location]         - Multi-Standort Buchung
-    booking-form.tsx    - Mehrstufiges Buchungsformular
+    booking-form.tsx    - Mehrstufiges Buchungsformular (inkl. Gastro-Reservierung)
     waitlist-form.tsx   - Warteliste
     location-selector.tsx
   /confirm/[token]      - Terminbestätigung
@@ -74,7 +74,7 @@
 
 /components
   business-landing.tsx  - Universal-Landingpage (alle Branchen)
-  menu-card.tsx         - Moderne Speisekarte mit Bildern & Allergenen
+  menu-card.tsx         - Moderne Speisekarte mit Bildern, Allergenen & Kategorie-Bildern
   chat-widget.tsx       - KI-Chatbot mit Booking-Flow + WhatsApp
   /ui                   - shadcn/ui Komponenten
 
@@ -83,9 +83,9 @@
     business-types.ts   - Branchen-Konfiguration (Labels, Prompts, Bilder)
   /actions
     tenant-domain.ts    - Subdomain → Tenant Mapping
-    services.ts         - CRUD für Services
+    services.ts         - CRUD für Services (inkl. Kategorie-Bild-Propagierung)
     employees.ts        - CRUD + Bild-Upload
-    public-booking.ts   - Buchungs-Logik
+    public-booking.ts   - Buchungs-Logik (inkl. Gastro-Reservierung)
     customers.ts        - Kundenverwaltung
     locations.ts        - Standorte
     waitlist.ts         - Warteliste
@@ -122,6 +122,7 @@
 ## VPS Setup
 
 **Server:** 72.60.36.113 (Hostinger KVM 4, bis 2027-08-22)
+**SSH-Passwort:** Donaidan1(2025)
 
 ```bash
 # SSH Zugang
@@ -138,6 +139,19 @@ pm2 logs esylana
 
 # Status
 pm2 status
+```
+
+### Deploy via Python (wenn SSH-Key fehlt)
+```python
+import pexpect
+child = pexpect.spawn('ssh -o StrictHostKeyChecking=no root@72.60.36.113', timeout=180)
+child.expect('password:')
+child.sendline('Donaidan1(2025)')
+child.expect(r'\$|#')
+child.sendline('cd /var/www/esylana && git pull && npm run build && cp .env.local .next/standalone/ && pm2 restart esylana')
+child.expect(r'\$|#', timeout=180)
+print(child.before.decode())
+child.close()
 ```
 
 ### Pfade auf VPS
@@ -192,7 +206,7 @@ docker restart root-traefik-1
 | `tenants` | Kliniken/Restaurants (mit `business_type`!) |
 | `users` | Staff/Admin Accounts |
 | `customers` | Endkunden der Tenants |
-| `services` | Behandlungen/Gerichte (mit `category`) |
+| `services` | Behandlungen/Gerichte (mit `category`, `category_image_url`) |
 | `appointments` | Termine/Reservierungen |
 | `employees` | Mitarbeiter/Personal |
 | `locations` | Standorte (mit `slug`!) |
@@ -212,15 +226,35 @@ docker restart root-traefik-1
 -- Basis-Felder
 id, tenant_id, name, description, category, price, duration_minutes, is_active
 
--- Gastro-spezifische Felder
-image_url TEXT,              -- Bild-URL aus dish-images Bucket
-allergens TEXT[],            -- Array: ['gluten', 'lactose', 'eggs', ...]
+-- Kategorie-Bild (wird auf alle Gerichte der Kategorie propagiert)
+category_image_url TEXT,
+
+-- Gericht-Bild
+image_url TEXT,
+
+-- Erweiterte Kennzeichnungen (Arrays)
+allergens TEXT[],           -- EU-Allergene
+diet_labels TEXT[],         -- Diät-Optionen
+other_labels TEXT[],        -- Sonstige Kennzeichnungen
+cross_contamination TEXT[], -- Kreuzkontaminations-Hinweise
+
+-- Legacy-Felder (noch unterstützt)
 is_vegetarian BOOLEAN,
 is_vegan BOOLEAN,
 is_spicy BOOLEAN
 ```
 
-**Allergen-Codes:** gluten, lactose, eggs, nuts, peanuts, soy, fish, shellfish, celery, mustard, sesame, sulfites
+### Allergen-Codes (EU-kennzeichnungspflichtig)
+`gluten, lactose, eggs, nuts, peanuts, soy, fish, shellfish, crustaceans, molluscs, celery, mustard, sesame, sulfites, lupins`
+
+### Diät-Labels
+`vegetarian, vegan, pescatarian, flexitarian, halal, kosher, lactose_free, gluten_free, sugar_free, low_carb, keto, paleo`
+
+### Sonstige Labels
+`spicy, alcohol, caffeine, additives, colorants, preservatives, flavor_enhancers, blackened, waxed, phosphate, sweeteners`
+
+### Kreuzkontamination
+`traces_possible, no_separate_prep`
 
 ## Features Status
 
@@ -228,12 +262,14 @@ is_spicy BOOLEAN
 - Multi-Tenant Dashboard
 - **Multi-Branchen-Support** (Klinik, Gastro, Friseur, Spätkauf)
 - Online-Terminbuchung (Dark Luxury Theme)
+- **Tischreservierung für Gastro** (mit Personenanzahl-Auswahl)
 - Subdomain-basierte Landingpages
 - **Chat-Widget mit Booking-Flow** (Service → Datum → Zeit → Kontakt)
 - **WhatsApp-Integration** (Buchungsanfrage per WhatsApp)
 - Branchenspezifische KI-Chat-Prompts
 - Dynamische Dashboard-Labels je Branche
 - Kategorie-Filter (Accordion)
+- **Kategorie-Bilder** (eigene Bilder pro Warengruppe, werden propagiert)
 - Warteliste-System
 - Email-Bestätigungen
 - Mitarbeiter mit Profilbildern
@@ -241,7 +277,8 @@ is_spicy BOOLEAN
 - Kunden-Login + "Meine Termine"
 - Mehrsprachiger Chat (DE/EN/TR/RU)
 - **Moderne Speisekarte** (MenuCard) mit Bildern, Allergenen, Diät-Icons
-- **Gastro-Dashboard** mit Bild-Upload, Allergen-Auswahl, Vegetarisch/Vegan/Scharf
+- **Erweiterte Gastro-Labels:** 12 Diät-Optionen, 15 EU-Allergene, 11 sonstige Labels, Kreuzkontamination
+- **Gastro-Dashboard** mit Bild-Upload, Allergen-Auswahl, Kategorie-Bilder
 
 ### Demo-Tenants
 | Tenant | Login | Passwort |
@@ -250,13 +287,25 @@ is_spicy BOOLEAN
 | Ristorante Milano | gastro@esylana.de | Gastro2025! |
 
 ### Geplant 📋
-- **Tischreservierung für Gastro** (Datum, Uhrzeit, Personenanzahl)
 - Warenkorb (mehrere Behandlungen)
 - Online-Zahlung (Stripe)
 - Embeddable Booking Widget
 - Custom Domain Support
 - Gutschein-System
 - SMS/WhatsApp Erinnerungen
+
+## Gastro Tischreservierung
+
+### Buchungsflow (booking-form.tsx)
+1. **Personenanzahl** (1-10+ Gäste, mit +/- Buttons und Quick-Select)
+2. **Datum** (nächste 14 Tage)
+3. **Uhrzeit** (Restaurant-Öffnungszeiten: 11:00-14:00, 17:00-22:00)
+4. **Kontaktdaten** (Name, Email, Telefon, Anmerkungen)
+5. **Bestätigung**
+
+### Backend (public-booking.ts)
+- `getGastroSlots()` - Generiert verfügbare Zeitslots
+- `createGastroReservation()` - Erstellt Reservierung mit automatischem "Tischreservierung" Service
 
 ## Chat-Widget Features
 
@@ -294,14 +343,11 @@ npx tsx scripts/seed-demo-services.ts
 # Demo-Restaurant seeden
 npx tsx scripts/seed-demo-gastro.ts
 
-# Gastro-Admin erstellen
-npx tsx scripts/create-gastro-admin.ts
-
 # Git Workflow
 git add -A && git commit -m "message" && git push origin main
 
-# Deploy auf VPS
-ssh root@72.60.36.113 "cd /var/www/esylana && git pull && npm install && npm run build && cp .env.local .next/standalone/ && pm2 restart esylana"
+# Deploy auf VPS (nach git push)
+# Siehe "Deploy via Python" oben
 ```
 
 ## Environment Variables
@@ -361,6 +407,12 @@ pm2 start npm --name "esylana" -- start && pm2 save
 git fetch origin && git reset --hard origin/main
 ```
 
+### Dialog zeigt alte Werte
+→ useEffect für State-Reset wenn Dialog öffnet (service-dialog.tsx)
+
+### Kategorie-Bild wird nicht angezeigt
+→ MenuCard muss `category_image_url` aus Items verwenden, nicht hardcodierte Bilder
+
 ## Design System (Landing & Booking)
 
 ```
@@ -384,20 +436,11 @@ Buttons:     bg-amber-500, text-black, hover:bg-amber-400
 
 **Keine AAAA Records!** (blockiert SSL)
 
-## Demo-Restaurant (Ristorante Milano)
-
-**Kategorien:** Vorspeisen (5), Hauptgerichte (8), Desserts (5), Getränke (6), Specials (3)
-
-Beispiele:
-- Bruschetta €8.90, Carpaccio €16.90
-- Wiener Schnitzel €26.90, Rinderfilet €38.90
-- Tiramisu €8.90, Panna Cotta €7.90
-- Degustationsmenü 5 Gänge €89.00
-
 ## Gastro-Speisekarte (MenuCard)
 
 ### Features
-- Hochwertige Bilder pro Gericht (Unsplash oder eigene)
+- Eigene Kategorie-Bilder (aus DB, Fallback auf Defaults)
+- Hochwertige Bilder pro Gericht
 - Allergen-Badges mit Icons und Farben
 - Vegetarisch/Vegan/Scharf Icons
 - Kategorien mit ausklappbaren Header-Bildern
@@ -405,10 +448,19 @@ Beispiele:
 - Hover-Effekte und Animationen
 - Allergen-Legende am Anfang
 
+### Kategorie-Bild Logik
+1. User lädt Kategorie-Bild bei einem Gericht hoch
+2. `category_image_url` wird in DB gespeichert
+3. Propagierung: Alle anderen Gerichte der gleichen Kategorie bekommen dasselbe Bild
+4. MenuCard: Sucht erstes Gericht mit `category_image_url`, nutzt das als Header
+
 ### Dashboard-Features (Gastro)
 - Bild-Upload mit Client-side Komprimierung (max 500KB)
-- Allergen-Checkboxen (12 Optionen)
-- Vegetarisch/Vegan/Scharf Toggle
+- Kategorie-Bild Upload direkt im Gericht-Dialog
+- 15 EU-Allergen-Checkboxen
+- 12 Diät-Label-Checkboxen
+- 11 Sonstige-Label-Checkboxen
+- 2 Kreuzkontaminations-Optionen
 - Vorschau der Bilder in der Liste
 - Dynamische Labels (Gericht statt Behandlung)
 
@@ -416,7 +468,16 @@ Beispiele:
 ```
 components/menu-card.tsx          - Speisekarten-Anzeige auf Landing
 app/dashboard/services/
-  service-dialog.tsx              - Formular mit Gastro-Feldern
+  service-dialog.tsx              - Formular mit Gastro-Feldern + Kategorie-Bild
   services-list.tsx               - Liste mit Bild-Vorschau
   page.tsx                        - Lädt businessType für Labels
+lib/actions/services.ts           - CRUD mit Kategorie-Bild-Propagierung
 ```
+
+## Letzte Änderungen (Januar 2026)
+
+1. **Tischreservierung** - Gastro-Buchungsflow mit Personenanzahl
+2. **Erweiterte Labels** - 12 Diät, 15 Allergene, 11 Sonstige, 2 Kreuzkontamination
+3. **Kategorie-Bilder** - Eigene Bilder pro Warengruppe, automatische Propagierung
+4. **Dialog State Reset** - useEffect für korrektes Zurücksetzen bei neuem/anderem Gericht
+5. **MenuCard Fix** - Nutzt jetzt category_image_url aus DB statt hardcodierte Unsplash-Bilder
