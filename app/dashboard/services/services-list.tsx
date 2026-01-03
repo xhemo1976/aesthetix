@@ -120,12 +120,31 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
         return
       }
 
-      // Create and download JSON file
-      const blob = new Blob([JSON.stringify(result.services, null, 2)], { type: 'application/json' })
+      // CSV Headers
+      const headers = ['Name', 'Beschreibung', 'Kategorie', 'Preis', 'Dauer (Min)', 'Aktiv', 'Vegetarisch', 'Vegan', 'Scharf', 'Allergene']
+
+      // Convert services to CSV rows
+      const rows = result.services.map((s: Record<string, unknown>) => [
+        escapeCsvField(s.name as string || ''),
+        escapeCsvField(s.description as string || ''),
+        escapeCsvField(s.category as string || ''),
+        s.price,
+        s.duration_minutes,
+        s.is_active ? 'Ja' : 'Nein',
+        s.is_vegetarian ? 'Ja' : 'Nein',
+        s.is_vegan ? 'Ja' : 'Nein',
+        s.is_spicy ? 'Ja' : 'Nein',
+        escapeCsvField((s.allergens as string[] || []).join(', ')),
+      ])
+
+      // Build CSV content with BOM for Excel UTF-8 support
+      const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(row => row.join(';'))].join('\n')
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${isGastronomy ? 'speisekarte' : 'behandlungen'}_${new Date().toISOString().split('T')[0]}.json`
+      a.download = `${isGastronomy ? 'speisekarte' : 'behandlungen'}_${new Date().toISOString().split('T')[0]}.csv`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -137,6 +156,14 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
     }
   }
 
+  // Helper to escape CSV fields
+  function escapeCsvField(field: string): string {
+    if (field.includes(';') || field.includes('"') || field.includes('\n')) {
+      return `"${field.replace(/"/g, '""')}"`
+    }
+    return field
+  }
+
   async function handleImport(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -144,13 +171,30 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
     setImporting(true)
     try {
       const text = await file.text()
-      const data = JSON.parse(text)
 
-      // Validate it's an array
-      if (!Array.isArray(data)) {
-        alert('Die Datei muss ein JSON-Array enthalten')
+      // Parse CSV
+      const lines = text.split('\n').filter(line => line.trim())
+      if (lines.length < 2) {
+        alert('Die CSV-Datei muss mindestens eine Kopfzeile und eine Datenzeile enthalten')
         return
       }
+
+      // Skip header row, parse data rows
+      const data = lines.slice(1).map(line => {
+        const values = parseCsvLine(line)
+        return {
+          name: values[0]?.trim() || '',
+          description: values[1]?.trim() || '',
+          category: values[2]?.trim() || '',
+          price: parseFloat(values[3]?.replace(',', '.') || '0'),
+          duration_minutes: parseInt(values[4] || '0') || 15,
+          is_active: values[5]?.toLowerCase() !== 'nein',
+          is_vegetarian: values[6]?.toLowerCase() === 'ja',
+          is_vegan: values[7]?.toLowerCase() === 'ja',
+          is_spicy: values[8]?.toLowerCase() === 'ja',
+          allergens: values[9] ? values[9].split(',').map(a => a.trim().toLowerCase()).filter(Boolean) : [],
+        }
+      }).filter(item => item.name) // Filter empty rows
 
       const result = await importServices(data)
 
@@ -163,7 +207,8 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
       // Refresh the page to show new services
       router.refresh()
     } catch (error) {
-      alert('Fehler beim Lesen der Datei. Stelle sicher, dass es eine gültige JSON-Datei ist.')
+      console.error('Import error:', error)
+      alert('Fehler beim Lesen der Datei. Stelle sicher, dass es eine gültige CSV-Datei ist.')
     } finally {
       setImporting(false)
       // Reset file input
@@ -171,6 +216,32 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
         fileInputRef.current.value = ''
       }
     }
+  }
+
+  // Helper to parse CSV line (handles quoted fields with semicolons)
+  function parseCsvLine(line: string): string[] {
+    const result: string[] = []
+    let current = ''
+    let inQuotes = false
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i]
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"'
+          i++ // Skip next quote
+        } else {
+          inQuotes = !inQuotes
+        }
+      } else if (char === ';' && !inQuotes) {
+        result.push(current)
+        current = ''
+      } else {
+        current += char
+      }
+    }
+    result.push(current)
+    return result
   }
 
   return (
@@ -184,7 +255,7 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
           <input
             ref={fileInputRef}
             type="file"
-            accept=".json"
+            accept=".csv"
             onChange={handleImport}
             className="hidden"
           />
