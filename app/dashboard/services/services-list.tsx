@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit, Trash2, Clock, Euro, Leaf, Flame, AlertTriangle } from 'lucide-react'
+import { Plus, Edit, Trash2, Clock, Euro, Leaf, Flame, AlertTriangle, Download, Upload } from 'lucide-react'
 import { ServiceDialog } from './service-dialog'
-import { deleteService, toggleServiceStatus } from '@/lib/actions/services'
+import { deleteService, toggleServiceStatus, exportServices, importServices } from '@/lib/actions/services'
+import { useRouter } from 'next/navigation'
 
 type Service = {
   id: string
@@ -53,6 +54,10 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
   const [services, setServices] = useState(initialServices)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
 
   const isGastronomy = businessType === 'gastronomy'
 
@@ -106,16 +111,109 @@ export function ServicesList({ initialServices, businessType = 'beauty_clinic' }
     setEditingService(null)
   }
 
+  async function handleExport() {
+    setExporting(true)
+    try {
+      const result = await exportServices()
+      if (result.error) {
+        alert('Fehler beim Export: ' + result.error)
+        return
+      }
+
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(result.services, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${isGastronomy ? 'speisekarte' : 'behandlungen'}_${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      alert('Fehler beim Export')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function handleImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setImporting(true)
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+
+      // Validate it's an array
+      if (!Array.isArray(data)) {
+        alert('Die Datei muss ein JSON-Array enthalten')
+        return
+      }
+
+      const result = await importServices(data)
+
+      if (result.error) {
+        alert(`Import abgeschlossen mit Fehlern:\n${result.imported} von ${result.total} importiert\n\n${result.error}`)
+      } else {
+        alert(`Import erfolgreich: ${result.imported} ${isGastronomy ? 'Gerichte' : 'Behandlungen'} importiert`)
+      }
+
+      // Refresh the page to show new services
+      router.refresh()
+    } catch (error) {
+      alert('Fehler beim Lesen der Datei. Stelle sicher, dass es eine gültige JSON-Datei ist.')
+    } finally {
+      setImporting(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="text-sm text-muted-foreground">
           {services.length} {services.length !== 1 ? labels.items : labels.item}
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="w-4 h-4 mr-2" />
-          {labels.newItem}
-        </Button>
+        <div className="flex gap-2">
+          {/* Hidden file input for import */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            className="hidden"
+          />
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            {importing ? 'Importiert...' : 'Import'}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={exporting || services.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {exporting ? 'Exportiert...' : 'Export'}
+          </Button>
+
+          <Button onClick={handleCreate}>
+            <Plus className="w-4 h-4 mr-2" />
+            {labels.newItem}
+          </Button>
+        </div>
       </div>
 
       {services.length === 0 ? (

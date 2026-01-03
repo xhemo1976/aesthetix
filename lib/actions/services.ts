@@ -227,3 +227,105 @@ export async function toggleServiceStatus(id: string, isActive: boolean) {
   revalidatePath('/dashboard/services')
   return { error: null }
 }
+
+// Export services as JSON
+export async function exportServices() {
+  const supabase = await createClient()
+
+  const { data: services, error } = await supabase
+    .from('services')
+    .select('name, description, category, price, duration_minutes, is_active, image_url, category_image_url, allergens, diet_labels, other_labels, cross_contamination, is_vegetarian, is_vegan, is_spicy')
+    .order('category', { ascending: true })
+    .order('name', { ascending: true })
+
+  if (error) {
+    console.error('Error exporting services:', error)
+    return { services: [], error: error.message }
+  }
+
+  return { services, error: null }
+}
+
+// Import services from JSON array
+export async function importServices(servicesData: Array<{
+  name: string
+  description?: string
+  category?: string
+  price: number
+  duration_minutes: number
+  is_active?: boolean
+  image_url?: string
+  category_image_url?: string
+  allergens?: string[]
+  diet_labels?: string[]
+  other_labels?: string[]
+  cross_contamination?: string[]
+  is_vegetarian?: boolean
+  is_vegan?: boolean
+  is_spicy?: boolean
+}>) {
+  const supabase = await createClient()
+  const adminClient = createAdminClient()
+
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { error: 'Nicht authentifiziert', imported: 0 }
+  }
+
+  // Get tenant_id
+  const { data: profile } = await adminClient
+    .from('users')
+    .select('tenant_id')
+    .eq('id', user.id)
+    .single() as { data: { tenant_id: string } | null }
+
+  if (!profile) {
+    return { error: 'Profil nicht gefunden', imported: 0 }
+  }
+
+  let imported = 0
+  const errors: string[] = []
+
+  for (const service of servicesData) {
+    if (!service.name || service.price === undefined || service.duration_minutes === undefined) {
+      errors.push(`Übersprungen: "${service.name || 'Unbenannt'}" - Name, Preis oder Dauer fehlt`)
+      continue
+    }
+
+    const { error } = await supabase
+      .from('services')
+      .insert({
+        tenant_id: profile.tenant_id,
+        name: service.name,
+        description: service.description || null,
+        category: service.category || null,
+        price: service.price,
+        duration_minutes: service.duration_minutes,
+        is_active: service.is_active !== false,
+        image_url: service.image_url || null,
+        category_image_url: service.category_image_url || null,
+        allergens: service.allergens?.length ? service.allergens : null,
+        diet_labels: service.diet_labels?.length ? service.diet_labels : null,
+        other_labels: service.other_labels?.length ? service.other_labels : null,
+        cross_contamination: service.cross_contamination?.length ? service.cross_contamination : null,
+        is_vegetarian: service.is_vegetarian || false,
+        is_vegan: service.is_vegan || false,
+        is_spicy: service.is_spicy || false,
+      })
+
+    if (error) {
+      errors.push(`Fehler bei "${service.name}": ${error.message}`)
+    } else {
+      imported++
+    }
+  }
+
+  revalidatePath('/dashboard/services')
+
+  return {
+    error: errors.length > 0 ? errors.join('\n') : null,
+    imported,
+    total: servicesData.length
+  }
+}
