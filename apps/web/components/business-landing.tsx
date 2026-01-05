@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ChatWidget } from '@/components/chat-widget'
 import { MenuCard } from '@/components/menu-card'
+import { SocialLinks } from '@esylana/social-media'
 import { getBusinessTypeConfig, type BusinessType } from '@/lib/config/business-types'
 import {
   Calendar,
@@ -14,9 +15,6 @@ import {
   Star,
   ChevronRight,
   ChevronDown,
-  Instagram,
-  Facebook,
-  Mail,
   Sparkles,
   Award,
   Heart,
@@ -602,17 +600,17 @@ export function BusinessLanding({ tenant, services, employees, locations }: Busi
                 </div>
               </div>
 
-              <div className="flex gap-4 mt-12">
-                <a href="#" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:border-amber-500/50 hover:bg-amber-500/10 transition-all">
-                  <Instagram className="w-5 h-5" />
-                </a>
-                <a href="#" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:border-amber-500/50 hover:bg-amber-500/10 transition-all">
-                  <Facebook className="w-5 h-5" />
-                </a>
-                <a href="#" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:border-amber-500/50 hover:bg-amber-500/10 transition-all">
-                  <Mail className="w-5 h-5" />
-                </a>
-              </div>
+              {/* Social Links - imported from @esylana/social-media package */}
+              <SocialLinks
+                links={[
+                  { platform: 'instagram', url: '#', label: 'Instagram' },
+                  { platform: 'facebook', url: '#', label: 'Facebook' },
+                  { platform: 'email', url: '#', label: 'Email' },
+                ]}
+                size="lg"
+                variant="icons"
+                className="mt-12"
+              />
             </div>
 
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-10">

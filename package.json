@@ -8,7 +8,9 @@
     "build": "pnpm --filter @esylana/web build",
     "start": "pnpm --filter @esylana/web start",
     "lint": "pnpm -r lint",
-    "clean": "pnpm -r exec rm -rf node_modules .next dist"
+    "clean": "pnpm -r exec rm -rf node_modules .next dist",
+    "deploy:prod": "pnpm run build && cp .env.local apps/web/.next/standalone/apps/web/ && pm2 restart esylana",
+    "deploy:prod:full": "pnpm install && pnpm run deploy:prod"
   },
   "keywords": ["saas", "beauty", "booking", "monorepo"],
   "author": "",
