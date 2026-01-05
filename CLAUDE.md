@@ -95,25 +95,25 @@ pnpm clean
 **Server:** 72.60.36.113 (Hostinger KVM 4, bis 2027-08-22)
 **SSH-Passwort:** Donaidan1(2025)
 
-### Deploy-Befehl (NEU - Monorepo!)
+### Deploy-Befehl (Monorepo)
 
 ```bash
 # Auf VPS
 cd /var/www/esylana
 git pull
 pnpm install
-pnpm --filter @esylana/web build
-cp apps/web/.env.local apps/web/.next/standalone/
+pnpm run build
+cp .env.local apps/web/.next/standalone/apps/web/
 pm2 restart esylana
 ```
 
-### PM2 Config (muss auf VPS angepasst werden!)
+### PM2 Config (einmalig nach Umstellung!)
 
 ```bash
-# PM2 neu konfigurieren für Monorepo
+# PM2 neu konfigurieren für Monorepo (server.js ist in standalone/apps/web/)
 pm2 delete esylana
-cd /var/www/esylana/apps/web
-pm2 start .next/standalone/server.js --name esylana
+cd /var/www/esylana/apps/web/.next/standalone/apps/web
+PORT=3000 pm2 start server.js --name esylana
 pm2 save
 ```
 
@@ -121,12 +121,12 @@ pm2 save
 
 ```python
 import pexpect
-child = pexpect.spawn('ssh -o StrictHostKeyChecking=no root@72.60.36.113', timeout=180)
+child = pexpect.spawn('ssh -o StrictHostKeyChecking=no root@72.60.36.113', timeout=300)
 child.expect('password:')
 child.sendline('Donaidan1(2025)')
 child.expect(r'\$|#')
-child.sendline('cd /var/www/esylana && git pull && pnpm install && pnpm --filter @esylana/web build && cp apps/web/.env.local apps/web/.next/standalone/ && pm2 restart esylana')
-child.expect(r'\$|#', timeout=180)
+child.sendline('cd /var/www/esylana && git pull && pnpm install && pnpm run build && cp .env.local apps/web/.next/standalone/apps/web/ && pm2 restart esylana')
+child.expect(r'\$|#', timeout=300)
 print(child.before.decode())
 child.close()
 ```
@@ -238,9 +238,11 @@ OPENAI_API_KEY=sk-...
 cd /var/www/esylana
 npm install -g pnpm
 pnpm install
+pnpm run build
+cp .env.local apps/web/.next/standalone/apps/web/
 pm2 delete esylana
-cd apps/web
-pm2 start .next/standalone/server.js --name esylana
+cd apps/web/.next/standalone/apps/web
+PORT=3000 pm2 start server.js --name esylana
 pm2 save
 ```
 
