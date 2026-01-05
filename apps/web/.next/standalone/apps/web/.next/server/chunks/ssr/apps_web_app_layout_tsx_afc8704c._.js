@@ -1,3 +1,0 @@
-module.exports=[28992,a=>{"use strict";var b=a.i(76925);function c({children:a}){return(0,b.jsx)("html",{lang:"de",children:(0,b.jsx)("body",{className:"antialiased",children:a})})}a.s(["default",()=>c,"metadata",0,{title:"Esylana - Beauty Clinic Management SaaS",description:"Professional booking and management system for beauty clinics and aesthetic practices"}])}];
-
-//# sourceMappingURL=apps_web_app_layout_tsx_afc8704c._.js.map
