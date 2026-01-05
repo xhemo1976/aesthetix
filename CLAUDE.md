@@ -98,13 +98,13 @@ pnpm clean
 ### Deploy-Befehl (Monorepo)
 
 ```bash
-# Auf VPS
+# Auf VPS - einfach!
 cd /var/www/esylana
 git pull
-pnpm install
-pnpm run build
-cp .env.local apps/web/.next/standalone/apps/web/
-pm2 restart esylana
+pnpm run deploy:prod       # Build + .env kopieren + PM2 restart
+
+# Oder mit Dependencies:
+pnpm run deploy:prod:full  # pnpm install + deploy:prod
 ```
 
 ### PM2 Config (einmalig nach Umstellung!)
@@ -125,7 +125,7 @@ child = pexpect.spawn('ssh -o StrictHostKeyChecking=no root@72.60.36.113', timeo
 child.expect('password:')
 child.sendline('Donaidan1(2025)')
 child.expect(r'\$|#')
-child.sendline('cd /var/www/esylana && git pull && pnpm install && pnpm run build && cp .env.local apps/web/.next/standalone/apps/web/ && pm2 restart esylana')
+child.sendline('cd /var/www/esylana && git pull && pnpm run deploy:prod')
 child.expect(r'\$|#', timeout=300)
 print(child.before.decode())
 child.close()
