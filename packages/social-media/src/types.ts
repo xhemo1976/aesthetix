@@ -1,6 +1,6 @@
 // Social Media Types
 
-export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok' | 'google'
+export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok' | 'google' | 'youtube' | 'whatsapp'
 
 export interface SocialPost {
   id: string
@@ -12,7 +12,9 @@ export interface SocialPost {
   likes?: number
   comments?: number
   shares?: number
+  views?: number
   createdAt: Date
+  metadata?: Record<string, any>
 }
 
 export interface SocialFeed {
