@@ -1,19 +1,20 @@
-# Esylana - Projekt Kontext
+# Esylana - Monorepo
 
 ## Überblick
 
 **Esylana** ist eine Multi-Branchen SaaS-Plattform für Dienstleister.
-- Multi-Tenant Architektur
+- Multi-Tenant Architektur (ein Deployment = alle Kunden)
+- **Monorepo mit pnpm Workspaces**
 - **Multi-Branchen:** Kliniken, Gastronomie, Friseure, Spätkauf
 - Online-Terminbuchung / Tischreservierung mit Subdomain-Support
 - Luxus-Landingpages (Dark Theme)
 - KI-Chatbot mit branchenspezifischen Prompts
-- WhatsApp-Integration für Buchungen
 
 **Repository:** github.com/xhemo1976/aesthetix
 
 ## Tech Stack
 
+- **Monorepo:** pnpm Workspaces
 - **Framework:** Next.js 16.1.1 (App Router, Standalone Output)
 - **Database:** Supabase (PostgreSQL + Auth + Storage)
 - **Styling:** Tailwind CSS + shadcn/ui
@@ -21,180 +22,189 @@
 - **Process Manager:** PM2
 - **Reverse Proxy:** Traefik (mit Let's Encrypt SSL)
 - **KI:** OpenAI GPT-4o-mini für Chat
-- **Image Compression:** browser-image-compression (Client-side)
 
-## Branchen-Support
-
-| Branche | business_type | Demo-URL | Dashboard-Labels |
-|---------|---------------|----------|------------------|
-| Schönheitsklinik | `beauty_clinic` | demo.esylana.de | Behandlungen, Termine, Kunden |
-| Restaurant | `gastronomy` | gastro.esylana.de | Speisekarte, Reservierungen, Gäste |
-| Friseur | `hairdresser` | - | Leistungen, Termine, Kunden |
-| Spätkauf | `late_shop` | - | Produkte, Bestellungen, Kunden |
-
-**Konfiguration:** `lib/config/business-types.ts`
-
-## Projekt-Struktur
+## Monorepo-Struktur
 
 ```
-/app
-  /api
-    /auth               - Staff Login/Signup/Logout
-    /customer/auth      - Kunden Login/Signup
-    /chat               - KI-Chat Endpoint (branchenspezifisch)
-    /chat/booking       - Chat-Buchungs-API (Services, Slots, Create)
-    /chat/events        - n8n Webhook Events
-    /debug              - Supabase Connection Test
-  /book/[slug]          - Öffentliche Buchungsseite (Dark Theme)
-    /success            - Buchungsbestätigung
-    /[location]         - Multi-Standort Buchung
-    booking-form.tsx    - Mehrstufiges Buchungsformular (inkl. Gastro-Reservierung)
-    waitlist-form.tsx   - Warteliste
-    location-selector.tsx
-  /confirm/[token]      - Terminbestätigung
-  /customer
-    /login              - Kunden-Login
-    /signup             - Kunden-Registrierung
-    /termine            - "Meine Termine" für Kunden
-  /dashboard            - Admin Dashboard (Multi-Tenant, dynamische Labels)
-    /employees          - Mitarbeiterverwaltung
-    /services           - Behandlungen/Speisekarte/Leistungen
-    /customers          - Kunden/Gäste
-    /appointments       - Termine/Reservierungen
-    /calendar           - Kalenderansicht
-    /analytics          - Statistiken
-    /locations          - Standorte
-    /packages           - Pakete/Menüs
-    /reminders          - Erinnerungen
-    /waitlist           - Warteliste
-    /settings           - Einstellungen
-  /team/[slug]          - Öffentliche Team-Seite
-  /login, /signup       - Staff Auth Seiten
-  page.tsx              - Landing (SaaS oder Tenant je nach Subdomain)
-
-/components
-  business-landing.tsx  - Universal-Landingpage (alle Branchen)
-  menu-card.tsx         - Moderne Speisekarte mit Bildern, Allergenen & Kategorie-Bildern
-  chat-widget.tsx       - KI-Chatbot mit Booking-Flow + WhatsApp
-  /ui                   - shadcn/ui Komponenten
-
-/lib
-  /config
-    business-types.ts   - Branchen-Konfiguration (Labels, Prompts, Bilder)
-  /actions
-    tenant-domain.ts    - Subdomain → Tenant Mapping
-    services.ts         - CRUD für Services (inkl. Kategorie-Bild-Propagierung)
-    employees.ts        - CRUD + Bild-Upload
-    public-booking.ts   - Buchungs-Logik (inkl. Gastro-Reservierung)
-    customers.ts        - Kundenverwaltung
-    locations.ts        - Standorte
-    waitlist.ts         - Warteliste
-  /supabase
-    server.ts           - Supabase Client (mit Cookies)
-    admin.ts            - Service Role Client (bypasses RLS)
-  /types
-    database.ts         - Supabase Types
-  /utils
-    whatsapp.ts         - WhatsApp Link Generator
-
-/scripts
-  seed-demo-services.ts     - Demo-Klinik Behandlungen
-  seed-demo-gastro.ts       - Demo-Restaurant Speisekarte
-  create-gastro-admin.ts    - Admin-User für Gastro
-  update-gastro-menu.ts     - Bilder & Allergene für Demo-Gerichte
-  add-menu-fields.sql       - DB-Migration für Gastro-Felder
+/esylana (root)
+├── pnpm-workspace.yaml       # Workspace-Konfiguration
+├── package.json              # Root package.json
+├── CLAUDE.md                 # Diese Datei
+│
+├── apps/
+│   └── web/                  # @esylana/web - Haupt-App
+│       ├── app/              # Next.js App Router
+│       ├── components/       # App-spezifische Komponenten
+│       ├── lib/              # Actions, Supabase, Utils
+│       ├── public/           # Static files
+│       ├── package.json
+│       ├── next.config.ts
+│       └── .env.local        # Environment Variables
+│
+└── packages/
+    └── social-media/         # @esylana/social-media
+        ├── src/
+        │   ├── index.ts
+        │   ├── types.ts
+        │   ├── utils.ts
+        │   └── components/
+        │       ├── instagram-feed.tsx
+        │       ├── social-links.tsx
+        │       └── google-reviews.tsx
+        ├── package.json
+        └── tsconfig.json
 ```
 
-## Domains & Subdomains
+## Package-Imports
 
-| Domain | Zeigt |
-|--------|-------|
-| esylana.de | SaaS Landing Page |
-| esylana.de/dashboard | Admin Dashboard |
-| esylana.de/book/[slug] | Buchungsseite |
-| demo.esylana.de | Demo-Klinik |
-| gastro.esylana.de | Demo-Restaurant |
-| [kunde].esylana.de | Kunden-Website |
+In `apps/web` kannst du Packages so importieren:
 
-**Subdomain-Erkennung:** `app/page.tsx` prüft Host-Header
-**Mapping:** `lib/actions/tenant-domain.ts`
+```typescript
+// Social Media Komponenten
+import { InstagramFeed, SocialLinks, GoogleReviews } from '@esylana/social-media'
+
+// Typen
+import type { SocialPost, SocialPlatform } from '@esylana/social-media'
+
+// Utilities
+import { formatSocialDate } from '@esylana/social-media'
+```
+
+## Häufige Befehle
+
+```bash
+# Dependencies installieren (vom Root)
+pnpm install
+
+# Entwicklung starten
+pnpm dev
+
+# Build (nur web)
+pnpm build
+
+# Einzelnes Package/App
+pnpm --filter @esylana/web dev
+pnpm --filter @esylana/social-media type-check
+
+# Alle Packages aufräumen
+pnpm clean
+```
 
 ## VPS Setup
 
 **Server:** 72.60.36.113 (Hostinger KVM 4, bis 2027-08-22)
 **SSH-Passwort:** Donaidan1(2025)
 
+### Deploy-Befehl (NEU - Monorepo!)
+
 ```bash
-# SSH Zugang
-ssh root@72.60.36.113
-
-# App Verzeichnis
+# Auf VPS
 cd /var/www/esylana
-
-# Deploy Befehl (WICHTIG!)
-git pull && npm install && npm run build && cp .env.local .next/standalone/ && pm2 restart esylana
-
-# Logs
-pm2 logs esylana
-
-# Status
-pm2 status
+git pull
+pnpm install
+pnpm --filter @esylana/web build
+cp apps/web/.env.local apps/web/.next/standalone/
+pm2 restart esylana
 ```
 
-### Deploy via Python (wenn SSH-Key fehlt)
+### PM2 Config (muss auf VPS angepasst werden!)
+
+```bash
+# PM2 neu konfigurieren für Monorepo
+pm2 delete esylana
+cd /var/www/esylana/apps/web
+pm2 start .next/standalone/server.js --name esylana
+pm2 save
+```
+
+### Deploy via Python
+
 ```python
 import pexpect
 child = pexpect.spawn('ssh -o StrictHostKeyChecking=no root@72.60.36.113', timeout=180)
 child.expect('password:')
 child.sendline('Donaidan1(2025)')
 child.expect(r'\$|#')
-child.sendline('cd /var/www/esylana && git pull && npm run build && cp .env.local .next/standalone/ && pm2 restart esylana')
+child.sendline('cd /var/www/esylana && git pull && pnpm install && pnpm --filter @esylana/web build && cp apps/web/.env.local apps/web/.next/standalone/ && pm2 restart esylana')
 child.expect(r'\$|#', timeout=180)
 print(child.before.decode())
 child.close()
 ```
 
-### Pfade auf VPS
-```
-/var/www/esylana/              # App
-/var/www/esylana/.env.local    # Env Vars
-/root/docker-compose.yml       # Traefik + n8n
-/etc/traefik/dynamic/          # Routing Configs (je Subdomain eine .yml)
-```
+## Packages
 
-### Traefik - Neue Subdomain hinzufügen
+### @esylana/social-media
+
+Social Media Integration Module.
+
+**Komponenten:**
+- `InstagramFeed` - Instagram Posts Grid
+- `SocialLinks` - Social Media Links (Icons/Buttons/Pills)
+- `GoogleReviews` - Google Bewertungen Widget
+
+**Typen:**
+- `SocialPlatform` - instagram | facebook | tiktok | google
+- `SocialPost` - Post mit Bild, Likes, Comments
+- `SocialFeed` - Feed mit mehreren Posts
+
+**Utilities:**
+- `formatSocialDate()` - "vor 2 Stunden"
+- `truncateText()` - Text kürzen mit ...
+- `extractHashtags()` - Hashtags extrahieren
+- `formatCount()` - 1.2k, 3.4M
+
+## Neues Package erstellen
+
 ```bash
-# 1. DNS bei Hostinger: A-Record für subdomain → 72.60.36.113
-# 2. Traefik Config erstellen:
-nano /etc/traefik/dynamic/[subdomain].yml
+# 1. Ordner erstellen
+mkdir -p packages/neues-modul/src
 
-# Inhalt:
-http:
-    routers:
-      [subdomain]:
-        rule: "Host(`[subdomain].esylana.de`)"
-        entryPoints:
-          - web
-          - websecure
-        service: esylana
-        tls:
-          certResolver: mytlschallenge
-    services:
-      [subdomain]:
-        loadBalancer:
-          servers:
-            - url: "http://172.17.0.1:3000"
+# 2. package.json erstellen
+cat > packages/neues-modul/package.json << 'EOF'
+{
+  "name": "@esylana/neues-modul",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}
+EOF
 
-# 3. Traefik neustarten:
-docker restart root-traefik-1
+# 3. In apps/web hinzufügen
+cd apps/web
+pnpm add @esylana/neues-modul@workspace:*
 ```
 
-### Dienste
-| Dienst | Port | Manager |
-|--------|------|---------|
-| Esylana | 3000 | PM2 |
-| n8n | 5678 | Docker |
-| Traefik | 80, 443 | Docker (root-traefik-1) |
+## Branchen-Support
+
+| Branche | business_type | Demo-URL |
+|---------|---------------|----------|
+| Schönheitsklinik | `beauty_clinic` | demo.esylana.de |
+| Restaurant | `gastronomy` | gastro.esylana.de |
+| Friseur | `hairdresser` | - |
+| Spätkauf | `late_shop` | - |
+
+## Features Status
+
+### Fertig ✅
+- Multi-Tenant Dashboard
+- Multi-Branchen-Support
+- Online-Terminbuchung
+- Tischreservierung für Gastro
+- Chat-Widget mit Booking-Flow
+- WhatsApp-Integration
+- Kategorie-Bilder
+- CSV Export/Import für Gerichte
+- **Monorepo-Struktur** mit pnpm Workspaces
+- **@esylana/social-media Package** (Gerüst)
+
+### In Arbeit 🚧
+- Social Media Integration (Instagram Feed, Google Reviews)
+
+### Geplant 📋
+- Stripe-Zahlung
+- Analytics Dashboard
+- Newsletter-System
 
 ## Supabase
 
@@ -203,281 +213,49 @@ docker restart root-traefik-1
 ### Wichtige Tabellen
 | Tabelle | Beschreibung |
 |---------|--------------|
-| `tenants` | Kliniken/Restaurants (mit `business_type`!) |
+| `tenants` | Kliniken/Restaurants (mit `business_type`) |
 | `users` | Staff/Admin Accounts |
-| `customers` | Endkunden der Tenants |
-| `services` | Behandlungen/Gerichte (mit `category`, `category_image_url`) |
+| `customers` | Endkunden |
+| `services` | Behandlungen/Gerichte |
 | `appointments` | Termine/Reservierungen |
-| `employees` | Mitarbeiter/Personal |
-| `locations` | Standorte (mit `slug`!) |
-| `packages` | Pakete/Menüs |
-| `waitlist` | Warteliste-Einträge |
+| `employees` | Mitarbeiter |
 
-### Storage Buckets
-| Bucket | Beschreibung |
-|--------|--------------|
-| `employee-images` | Mitarbeiter-Profilbilder (public) |
-| `dish-images` | Gerichte-Bilder für Gastro (public) |
-
-**RLS:** Aktiv - Service Role Key für Admin-Operationen
-
-### Services-Tabelle (erweitert für Gastro)
-```sql
--- Basis-Felder
-id, tenant_id, name, description, category, price, duration_minutes, is_active
-
--- Kategorie-Bild (wird auf alle Gerichte der Kategorie propagiert)
-category_image_url TEXT,
-
--- Gericht-Bild
-image_url TEXT,
-
--- Erweiterte Kennzeichnungen (Arrays)
-allergens TEXT[],           -- EU-Allergene
-diet_labels TEXT[],         -- Diät-Optionen
-other_labels TEXT[],        -- Sonstige Kennzeichnungen
-cross_contamination TEXT[], -- Kreuzkontaminations-Hinweise
-
--- Legacy-Felder (noch unterstützt)
-is_vegetarian BOOLEAN,
-is_vegan BOOLEAN,
-is_spicy BOOLEAN
-```
-
-### Allergen-Codes (EU-kennzeichnungspflichtig)
-`gluten, lactose, eggs, nuts, peanuts, soy, fish, shellfish, crustaceans, molluscs, celery, mustard, sesame, sulfites, lupins`
-
-### Diät-Labels
-`vegetarian, vegan, pescatarian, flexitarian, halal, kosher, lactose_free, gluten_free, sugar_free, low_carb, keto, paleo`
-
-### Sonstige Labels
-`spicy, alcohol, caffeine, additives, colorants, preservatives, flavor_enhancers, blackened, waxed, phosphate, sweeteners`
-
-### Kreuzkontamination
-`traces_possible, no_separate_prep`
-
-## Features Status
-
-### Fertig ✅
-- Multi-Tenant Dashboard
-- **Multi-Branchen-Support** (Klinik, Gastro, Friseur, Spätkauf)
-- Online-Terminbuchung (Dark Luxury Theme)
-- **Tischreservierung für Gastro** (mit Personenanzahl-Auswahl)
-- Subdomain-basierte Landingpages
-- **Chat-Widget mit Booking-Flow** (Service → Datum → Zeit → Kontakt)
-- **WhatsApp-Integration** (Buchungsanfrage per WhatsApp)
-- Branchenspezifische KI-Chat-Prompts
-- Dynamische Dashboard-Labels je Branche
-- Kategorie-Filter (Accordion)
-- **Kategorie-Bilder** (eigene Bilder pro Warengruppe, werden propagiert)
-- Warteliste-System
-- Email-Bestätigungen
-- Mitarbeiter mit Profilbildern
-- Standort-Verwaltung
-- Kunden-Login + "Meine Termine"
-- Mehrsprachiger Chat (DE/EN/TR/RU)
-- **Moderne Speisekarte** (MenuCard) mit Bildern, Allergenen, Diät-Icons
-- **Erweiterte Gastro-Labels:** 12 Diät-Optionen, 15 EU-Allergene, 11 sonstige Labels, Kreuzkontamination
-- **Gastro-Dashboard** mit Bild-Upload, Allergen-Auswahl, Kategorie-Bilder
-
-### Demo-Tenants
-| Tenant | Login | Passwort |
-|--------|-------|----------|
-| Demo-Klinik | demo@esylana.de | - |
-| Ristorante Milano | gastro@esylana.de | Gastro2025! |
-
-### Geplant 📋
-- Warenkorb (mehrere Behandlungen)
-- Online-Zahlung (Stripe)
-- Embeddable Booking Widget
-- Custom Domain Support
-- Gutschein-System
-- SMS/WhatsApp Erinnerungen
-
-## Gastro Tischreservierung
-
-### Buchungsflow (booking-form.tsx)
-1. **Personenanzahl** (1-10+ Gäste, mit +/- Buttons und Quick-Select)
-2. **Datum** (nächste 14 Tage)
-3. **Uhrzeit** (Restaurant-Öffnungszeiten: 11:00-14:00, 17:00-22:00)
-4. **Kontaktdaten** (Name, Email, Telefon, Anmerkungen)
-5. **Bestätigung**
-
-### Backend (public-booking.ts)
-- `getGastroSlots()` - Generiert verfügbare Zeitslots
-- `createGastroReservation()` - Erstellt Reservierung mit automatischem "Tischreservierung" Service
-
-## Chat-Widget Features
-
-### Booking-Flow im Chat
-1. "Direkt Termin buchen" Button
-2. Service-Auswahl (nach Kategorien gruppiert)
-3. Datum-Auswahl (nächste 14 Tage, ohne Sonntag)
-4. Zeit-Auswahl (basierend auf Verfügbarkeit)
-5. Kontaktdaten-Formular
-6. Bestätigung + Buchung
-
-### WhatsApp-Integration
-- "Lieber per WhatsApp buchen?" Link während Booking-Flow
-- Vorgefertigte Nachricht mit allen Buchungsdetails
-- Benötigt `whatsapp_number` in tenants-Tabelle
-
-### Branchenspezifische Prompts
-- **Klinik:** Beauty-Beratung, Behandlungsempfehlungen
-- **Gastro:** Restaurant-Host, Menü-Empfehlungen, Allergien
-- **Friseur:** Styling-Beratung
-- **Spätkauf:** Produkt-Info, Bestellungen
-
-## Häufige Befehle
-
-```bash
-# Lokal entwickeln
-npm run dev
-
-# Build testen
-npm run build
-
-# Demo-Klinik seeden
-npx tsx scripts/seed-demo-services.ts
-
-# Demo-Restaurant seeden
-npx tsx scripts/seed-demo-gastro.ts
-
-# Git Workflow
-git add -A && git commit -m "message" && git push origin main
-
-# Deploy auf VPS (nach git push)
-# Siehe "Deploy via Python" oben
-```
-
-## Environment Variables
+## Environment Variables (apps/web/.env.local)
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://hccoltgswaqhpyzswvwa.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 NEXT_PUBLIC_APP_URL=https://esylana.de
-OPENAI_API_KEY=sk-... (für Chat)
-```
-
-## next.config.ts
-
-```typescript
-const nextConfig: NextConfig = {
-  output: 'standalone',
-  images: {
-    remotePatterns: [{ protocol: 'https', hostname: '**' }],
-  },
-  poweredByHeader: false,
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '5mb',
-    },
-  },
-}
+OPENAI_API_KEY=sk-...
 ```
 
 ## Bekannte Lösungen
 
-### "Server Action not found" (404)
-→ API Routes statt Server Actions für Auth nutzen
-
-### "supabaseKey is required"
-→ Nach Build: `cp .env.local .next/standalone/`
-
-### SSL Zertifikat Fehler
-→ AAAA Records bei Hostinger löschen, nur A Records
-
-### Neue Subdomain zeigt 404
-→ Traefik Config fehlt! Siehe "Traefik - Neue Subdomain hinzufügen"
-
-### Traefik Container neustarten
+### Nach Monorepo-Umstellung: VPS neu konfigurieren
 ```bash
-docker restart root-traefik-1
+# Auf VPS
+cd /var/www/esylana
+npm install -g pnpm
+pnpm install
+pm2 delete esylana
+cd apps/web
+pm2 start .next/standalone/server.js --name esylana
+pm2 save
 ```
 
-### Port 3000 belegt
+### pnpm nicht gefunden auf VPS
 ```bash
-pm2 delete all && pkill -f "node.*server.js"
-pm2 start npm --name "esylana" -- start && pm2 save
+npm install -g pnpm
 ```
 
-### Server nicht aktualisiert
+### "Module not found" nach Umstellung
 ```bash
-git fetch origin && git reset --hard origin/main
-```
-
-### Dialog zeigt alte Werte
-→ useEffect für State-Reset wenn Dialog öffnet (service-dialog.tsx)
-
-### Kategorie-Bild wird nicht angezeigt
-→ MenuCard muss `category_image_url` aus Items verwenden, nicht hardcodierte Bilder
-
-## Design System (Landing & Booking)
-
-```
-Background:  #0a0a0a (fast schwarz)
-Cards:       bg-white/5, border-white/10
-Akzent:      amber-400 (text), amber-500 (buttons/active)
-Hover:       amber-500/50 (borders)
-Text:        white, white/70 (secondary), white/50 (muted)
-Font:        Light weights, tracking-wide, uppercase für Labels
-Buttons:     bg-amber-500, text-black, hover:bg-amber-400
-```
-
-## DNS bei Hostinger
-
-| Typ | Name | Ziel |
-|-----|------|------|
-| A | @ | 72.60.36.113 |
-| A | www | 72.60.36.113 |
-| A | demo | 72.60.36.113 |
-| A | gastro | 72.60.36.113 |
-
-**Keine AAAA Records!** (blockiert SSL)
-
-## Gastro-Speisekarte (MenuCard)
-
-### Features
-- Eigene Kategorie-Bilder (aus DB, Fallback auf Defaults)
-- Hochwertige Bilder pro Gericht
-- Allergen-Badges mit Icons und Farben
-- Vegetarisch/Vegan/Scharf Icons
-- Kategorien mit ausklappbaren Header-Bildern
-- Responsive Grid (1-4 Spalten)
-- Hover-Effekte und Animationen
-- Allergen-Legende am Anfang
-
-### Kategorie-Bild Logik
-1. User lädt Kategorie-Bild bei einem Gericht hoch
-2. `category_image_url` wird in DB gespeichert
-3. Propagierung: Alle anderen Gerichte der gleichen Kategorie bekommen dasselbe Bild
-4. MenuCard: Sucht erstes Gericht mit `category_image_url`, nutzt das als Header
-
-### Dashboard-Features (Gastro)
-- Bild-Upload mit Client-side Komprimierung (max 500KB)
-- Kategorie-Bild Upload direkt im Gericht-Dialog
-- 15 EU-Allergen-Checkboxen
-- 12 Diät-Label-Checkboxen
-- 11 Sonstige-Label-Checkboxen
-- 2 Kreuzkontaminations-Optionen
-- Vorschau der Bilder in der Liste
-- Dynamische Labels (Gericht statt Behandlung)
-
-### Komponenten
-```
-components/menu-card.tsx          - Speisekarten-Anzeige auf Landing
-app/dashboard/services/
-  service-dialog.tsx              - Formular mit Gastro-Feldern + Kategorie-Bild
-  services-list.tsx               - Liste mit Bild-Vorschau
-  page.tsx                        - Lädt businessType für Labels
-lib/actions/services.ts           - CRUD mit Kategorie-Bild-Propagierung
+pnpm install  # Im Root ausführen
 ```
 
 ## Letzte Änderungen (Januar 2026)
 
-1. **Tischreservierung** - Gastro-Buchungsflow mit Personenanzahl
-2. **Erweiterte Labels** - 12 Diät, 15 Allergene, 11 Sonstige, 2 Kreuzkontamination
-3. **Kategorie-Bilder** - Eigene Bilder pro Warengruppe, automatische Propagierung
-4. **Dialog State Reset** - useEffect für korrektes Zurücksetzen bei neuem/anderem Gericht
-5. **MenuCard Fix** - Nutzt jetzt category_image_url aus DB statt hardcodierte Unsplash-Bilder
+1. **Monorepo-Umstellung** - pnpm Workspaces
+2. **@esylana/social-media** - Neues Package mit Komponenten
+3. **Struktur:** apps/web + packages/social-media

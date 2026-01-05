@@ -1,0 +1,125 @@
+{
+  "node": {
+    "00ea5d6db9aa78d155ad7148c00d987a78197cad0e": {
+      "workers": {
+        "app/dashboard/analytics/page": {
+          "moduleId": 18253,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "apps/web/lib/actions/auth.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/analytics/page": "rsc"
+      },
+      "exportedName": "logout",
+      "filename": "apps/web/lib/actions/auth.ts"
+    },
+    "40557600bffd5a2c9eccc9fb8b66b41ea0de68fa87": {
+      "workers": {
+        "app/dashboard/analytics/page": {
+          "moduleId": 18253,
+          "async": false,
+          "exportedName": "login",
+          "filename": "apps/web/lib/actions/auth.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/analytics/page": "rsc"
+      },
+      "exportedName": "login",
+      "filename": "apps/web/lib/actions/auth.ts"
+    },
+    "40edf544285d63aedbf98dd3fd472b99b616040b0a": {
+      "workers": {
+        "app/dashboard/analytics/page": {
+          "moduleId": 18253,
+          "async": false,
+          "exportedName": "signup",
+          "filename": "apps/web/lib/actions/auth.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/analytics/page": "rsc"
+      },
+      "exportedName": "signup",
+      "filename": "apps/web/lib/actions/auth.ts"
+    },
+    "405b2fa7f26c9244805fae2402ed480423dba0f5b1": {
+      "workers": {
+        "app/dashboard/analytics/page": {
+          "moduleId": 18253,
+          "async": false,
+          "exportedName": "getCustomerStats",
+          "filename": "apps/web/lib/actions/analytics.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/analytics/page": "rsc"
+      },
+      "exportedName": "getCustomerStats",
+      "filename": "apps/web/lib/actions/analytics.ts"
+    },
+    "4073d8e6e96ebb9b7cb63118941bb6d6d67ccbf3d3": {
+      "workers": {
+        "app/dashboard/analytics/page": {
+          "moduleId": 18253,
+          "async": false,
+          "exportedName": "getDailyRevenue",
+          "filename": "apps/web/lib/actions/analytics.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/analytics/page": "rsc"
+      },
+      "exportedName": "getDailyRevenue",
+      "filename": "apps/web/lib/actions/analytics.ts"
+    },
+    "4078fb8ea762750431f1c09776919659dc3d0b0635": {
+      "workers": {
+        "app/dashboard/analytics/page": {
+          "moduleId": 18253,
+          "async": false,
+          "exportedName": "getRevenueStats",
+          "filename": "apps/web/lib/actions/analytics.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/analytics/page": "rsc"
+      },
+      "exportedName": "getRevenueStats",
+      "filename": "apps/web/lib/actions/analytics.ts"
+    },
+    "40ac9402f23b1bd4fc9d0ac190cfcdef0ca0da692f": {
+      "workers": {
+        "app/dashboard/analytics/page": {
+          "moduleId": 18253,
+          "async": false,
+          "exportedName": "getEmployeeStats",
+          "filename": "apps/web/lib/actions/analytics.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/analytics/page": "rsc"
+      },
+      "exportedName": "getEmployeeStats",
+      "filename": "apps/web/lib/actions/analytics.ts"
+    },
+    "40c4a7aa5ba46dad44656eb17c3e905f481f09d023": {
+      "workers": {
+        "app/dashboard/analytics/page": {
+          "moduleId": 18253,
+          "async": false,
+          "exportedName": "getServiceStats",
+          "filename": "apps/web/lib/actions/analytics.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/analytics/page": "rsc"
+      },
+      "exportedName": "getServiceStats",
+      "filename": "apps/web/lib/actions/analytics.ts"
+    }
+  },
+  "edge": {}
+}

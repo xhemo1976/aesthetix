@@ -1,0 +1,30 @@
+{
+  "name": "@esylana/social-media",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Social Media Integration Module for Esylana",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./components": {
+      "import": "./src/components/index.ts",
+      "types": "./src/components/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "typescript": "^5.9.3"
+  }
+}
