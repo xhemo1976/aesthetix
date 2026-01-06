@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && pnpm run postbuild",
-    "postbuild": "mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "postbuild": "mkdir -p .next/standalone/apps/web/.next && cp -r .next/static .next/standalone/apps/web/.next/ && cp -r public .next/standalone/apps/web/",
     "start": "node .next/standalone/server.js",
     "start:prod": "PORT=3000 node .next/standalone/server.js",
     "lint": "next lint"
