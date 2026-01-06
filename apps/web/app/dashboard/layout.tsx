@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { logout } from '@/lib/actions/auth'
-import { Calendar, Users, Sparkles, Settings, LogOut, LayoutDashboard, UserCircle, Bell, BarChart3, MapPin, Clock, Package, UtensilsCrossed, Scissors } from 'lucide-react'
+import { Calendar, Users, Sparkles, Settings, LogOut, LayoutDashboard, UserCircle, Bell, BarChart3, MapPin, Clock, Package, UtensilsCrossed, Scissors, Share2 } from 'lucide-react'
 import { getBusinessTypeConfig, type BusinessType } from '@/lib/config/business-types'
 
 export default async function DashboardLayout({
@@ -154,6 +154,13 @@ export default async function DashboardLayout({
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
                 <BarChart3 className="w-5 h-5" />
                 <span>Analytics</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/social-media">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+                <Share2 className="w-5 h-5" />
+                <span>Social Media</span>
               </div>
             </Link>
 

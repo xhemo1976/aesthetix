@@ -19,6 +19,10 @@ export interface Database {
           contact_email: string | null
           contact_phone: string | null
           whatsapp_number: string | null
+          instagram_url: string | null
+          facebook_url: string | null
+          google_place_url: string | null
+          website_url: string | null
           address: string | null
           city: string | null
           postal_code: string | null
@@ -42,6 +46,10 @@ export interface Database {
           contact_email?: string | null
           contact_phone?: string | null
           whatsapp_number?: string | null
+          instagram_url?: string | null
+          facebook_url?: string | null
+          google_place_url?: string | null
+          website_url?: string | null
           address?: string | null
           city?: string | null
           postal_code?: string | null
@@ -65,6 +73,10 @@ export interface Database {
           contact_email?: string | null
           contact_phone?: string | null
           whatsapp_number?: string | null
+          instagram_url?: string | null
+          facebook_url?: string | null
+          google_place_url?: string | null
+          website_url?: string | null
           address?: string | null
           city?: string | null
           postal_code?: string | null
