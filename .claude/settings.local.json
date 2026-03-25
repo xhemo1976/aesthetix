@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sS --connect-timeout 10 -o /dev/null -w \"%{http_code}\" https://esylana.de)",
+      "Bash(curl -sS --connect-timeout 10 -o /dev/null -w \"%{http_code}\" https://aesthetix-umber.vercel.app)",
+      "Bash(nslookup:*)",
+      "Bash(ipconfig:*)",
+      "WebFetch(domain:aesthetix-umber.vercel.app)",
+      "WebFetch(domain:aesthetix-lvih4tzhw-xhemo1976s-projects.vercel.app)",
+      "Bash(curl -sS --connect-timeout 10 -w \"\\\\n%{http_code}\" https://aesthetix-lvih4tzhw-xhemo1976s-projects.vercel.app)",
+      "Bash(git pull:*)",
+      "Bash(git rebase:*)",
+      "Bash(python3 -c \"import sys,json; print\\(json.load\\(sys.stdin\\)[''''token''''][:10]+''''...''''\\)\")",
+      "Read(//c/Users/webdj/aesthetix/$HOME/.config/com.vercel.cli/**)"
+    ]
+  }
+}
